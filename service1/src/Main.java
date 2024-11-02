@@ -34,6 +34,8 @@ public class Main {
             writer.println(jsonResponse);
             writer.close();
             clientSocket.close();
+
+            Thread.sleep(2000); // for delaying
         }
     }
 
