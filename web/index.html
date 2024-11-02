@@ -8,16 +8,16 @@
     <h1> Service</h1>
     <button onclick="sendRequest()">REQUEST</button>
     <button onclick="stopServices()">STOP</button>
-    <textarea id="response" cols="30" rows="10" readonly></textarea>
+    <textarea id="response" cols="50" rows="10" readonly></textarea>
 
     <script>
         async function sendRequest(){
 
             try{
-            let response = await fetch('/')
+            let response = await fetch('/api/')
             if(response.ok){
                 let data = await response.json()
-                document.getElementById('response').value = JSON.stringify(data)
+                document.getElementById('response').value = JSON.stringify(data, null, 2)
             } else{
                 alert('HTTP-Error: ' + response.status)
             }
@@ -26,15 +26,12 @@
         }
         }
         
-        async function stopServices() {
-            try {
-                await fetch('/stop');
-                alert('Services stopped');
-                window.close();  // Close the window
-            } catch (error) {
-                console.error("Error stopping services:", error);
-                alert("Failed to stop services");
-            }
+        function stopServices() {
+            fetch('/api/stop')
+                .then(() => {
+                    alert('Stopping services...');
+                    
+                });
         }
     </script>
     
