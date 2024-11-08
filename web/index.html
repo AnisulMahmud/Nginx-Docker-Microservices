@@ -6,8 +6,8 @@
 </head>
 <body>
     <h1> Service</h1>
-    <button onclick="sendRequest()">REQUEST</button>
-    <button onclick="stopServices()">STOP</button>
+    <button id="requestButton" onclick="sendRequest()">REQUEST</button>
+    <button id="stopButton" onclick="stopServices()">STOP</button>
     <textarea id="response" cols="50" rows="10" readonly></textarea>
 
     <script>
@@ -27,13 +27,20 @@
         }
         
         function stopServices() {
-            fetch('/api/stop')
-                .then(() => {
-                    alert('Stopping services...');
-                    
-                });
-        }
+        fetch('/api/stop', { method: 'POST' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to stop services. Status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message); // Display shutdown message
+            })
+            .catch(error => {
+                console.error('Error stopping services:', error.message);
+            });
+    }
     </script>
-    
 </body>
 </html>

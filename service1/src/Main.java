@@ -7,62 +7,106 @@ import java.util.Date;
 import java.util.stream.*;
 
 public class Main {
-  
+    public static void main(String[] args) {
+        ServerSocket serverSocket = null;
+        try {
+            // Create an HTTP server to listen on port 8199
+            serverSocket = new ServerSocket(8199);
+            System.err.println("Service1 is running on port 8199");
 
-    public static void main(String[] args) throws Exception {
-        // for creating http server to listen on port 8199
-        ServerSocket serverSocket = new ServerSocket(8199);
-        System.err.println("Service1 is running on port 8199");
-
-        while (true) {
-           ;
-
-            Socket clientSocket = serverSocket.accept();
-            // Handle the request in a new thread
-            new Thread(() -> {
+            while (true) {
                 try {
-                    handleRequest(clientSocket);
-                } catch (Exception e) {
-                    System.err.println(" - Error handling request: " + e.getMessage());
+                    Socket clientSocket = serverSocket.accept();
+                    // Handlint the the request 
+                    new Thread(() -> {
+                        try {
+                            handleRequest(clientSocket);
+                        } catch (Exception e) {
+                            System.err.println(" - Error handling request: " + e.getMessage());
+                        }
+                    }).start();
+                } catch (IOException e) {
+                    System.err.println("Error accepting connection: " + e.getMessage());
                 }
-            }).start();
-        }
-    }
-
-    private static void handleRequest(Socket clientSocket) throws Exception{
-        try (OutputStream output = clientSocket.getOutputStream();
-             PrintWriter writer = new PrintWriter(output, true)) {
-
-    
-            // Getting service information
-            String service1 = getService1Info();
-            String service2 = getService2Info();
-
-            // HTTP response
-            writer.println("HTTP/1.1 200 OK");
-            writer.println("Content-Type: application/json");
-            writer.println("Connection: close");
-            writer.println();
-
-            // Combine service information into JSON
-            String jsonResponse = "{\"service1\":" + service1 + ",\"service2\":" + service2 + "}";
-            writer.println(jsonResponse);
-
-   
-            // Sleep for 2 seconds to simulate delay in handling next request
-            Thread.sleep(2000);
-            
-
-        } catch (IOException | InterruptedException e) {
-            System.err.println("Error handling request: " + e.getMessage());
+            }
+        } catch (IOException e) {
+            System.err.println("Could not start server: " + e.getMessage());
         } finally {
-            try {
-                clientSocket.close();
-            } catch (IOException e) {
-                System.err.println("Error closing client socket: " + e.getMessage());
+          
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                try {
+                    serverSocket.close();
+                    System.err.println("Server socket closed.");
+                } catch (IOException e) {
+                    System.err.println("Error closing server socket: " + e.getMessage());
+                }
             }
         }
     }
+
+
+    private static void handleRequest(Socket clientSocket) throws Exception {
+        try (OutputStream output = clientSocket.getOutputStream();
+             PrintWriter writer = new PrintWriter(output, true);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+    
+            String requestLine = reader.readLine();
+    
+            if (requestLine.startsWith("POST /api/stop")) {
+                // Stop Docker Compose and exit the application
+                stopDockerCompose() ;
+                
+                writer.println("HTTP/1.1 200 OK");
+                writer.println("Content-Type: application/json");
+                writer.println("Connection: close");
+                writer.println();
+                writer.println("{\"message\":\"System is shutting down...\"}");
+            } else {
+                // Regular request handling
+                String service1 = getService1Info();
+                String service2 = getService2Info();
+                writer.println("HTTP/1.1 200 OK");
+                writer.println("Content-Type: application/json");
+                writer.println("Connection: close");
+                writer.println();
+                String jsonResponse = "{\"service1\":" + service1 + ",\"service2\":" + service2 + "}";
+                writer.println(jsonResponse);
+
+               // Sleep for 2 seconds to si delay in  next request
+            Thread.sleep(2000);
+            }
+        } catch (IOException e) {
+            System.err.println("Error handling request: " + e.getMessage());
+        } finally {
+            clientSocket.close();
+        }
+    }
+    
+
+    private static void stopDockerCompose() {
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", "docker-compose -f /app/docker-compose.yml down");
+            processBuilder.inheritIO(); 
+            Process process = processBuilder.start();
+            int exitCode = process.waitFor(); 
+    
+            if (exitCode == 0) {
+                
+                System.out.println("{\"message\":\"Services stopped successfully.\"}");
+            } else {
+               
+                System.out.println("{\"message\":\"Failed to stop services.\"}");
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            System.out.println("{\"message\":\"Error stopping services: " + e.getMessage() + "\"}");
+        } finally {
+          
+            System.exit(0);
+        }
+    }
+    
+
 
     private static String getService1Info() throws Exception {
         StringBuilder info = new StringBuilder();

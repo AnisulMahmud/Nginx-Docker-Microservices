@@ -4,27 +4,35 @@ services:
   service1-1:
     build:
       context: ./service1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker-compose.yml:/app/docker-compose.yml  
     networks:
       - app-network
-  
+
   service1-2:
     build:
       context: ./service1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker-compose.yml:/app/docker-compose.yml  
     networks:
       - app-network
 
   service1-3:
     build:
       context: ./service1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker-compose.yml:/app/docker-compose.yml  
     networks:
-      - app-network        
-      
+      - app-network
 
   service2:
     build:
       context: ./service2
     ports:
-      - "5000:5000"  
+      - "5000:5000"
     networks:
       - app-network
 
@@ -45,4 +53,3 @@ services:
 
 networks:
   app-network:
-     
