@@ -6,7 +6,7 @@ RUN apk add --no-cache docker-cli docker-compose
 # Set the working directory
 WORKDIR /app
 
-# Copy the source code and the shutdown script into the container
+# Copy the source code
 COPY src/ /app/src/
 
 
