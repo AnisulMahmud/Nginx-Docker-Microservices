@@ -11,9 +11,9 @@ services:
 
 before_script:
   - apk add --no-cache docker-compose
-  - apk add --no-cache net-tools  # Install netstat
+  - apk add --no-cache net-tools 
   - docker info
-  - docker-compose -f docker-compose.yml down  # Ensure previous containers are stopped and removed
+  - docker-compose -f docker-compose.yml down  
   - if netstat -tuln | grep ':5000' >/dev/null ; then kill -9 $(netstat -tuln | grep ':5000' | awk '{print $7}' | cut -d'/' -f1) ; fi  # Ensure port 5000 is free
 
 build:
