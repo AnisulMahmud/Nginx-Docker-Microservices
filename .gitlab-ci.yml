@@ -4,24 +4,24 @@ stages:
   - deploy
 
 variables:
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_CERTDIR: "/certs"
+  # Set the correct Docker host and disable TLS
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""  # Disable TLS, since we are using DinD without TLS
   DOCKER_DRIVER: overlay2
   DOCKER_NETWORK_MODE: host
 
-image: docker:latest
+image: docker:latest  # Use the Docker image for the runner
+
 services:
-  - name: docker:dind
-    alias: docker
-    command: ["--tls=false"]
+  - name: docker:dind  # Docker-in-Docker service
+    alias: docker  # Set alias for easy access
+    command: ["--tls=false"]  # Disable TLS for DinD (important for communication)
 
 before_script:
+  # Install necessary packages and tools for the pipeline
   - apk update
-  - apk add --no-cache 
-      docker-compose 
-      python3 
-      git
-  # Diagnostic commands
+  - apk add --no-cache docker-compose python3 git
+  # Diagnostic commands to help troubleshoot network issues
   - echo "Hostname resolution:"
   - cat /etc/hosts
   - echo "Trying to resolve docker:"
@@ -29,28 +29,31 @@ before_script:
   - echo "Checking network interfaces:"
   - ip addr
 
+# Build Stage: Build the Docker containers using docker-compose
 build_services:
   stage: build
   script:
     - cd $CI_PROJECT_DIR
     - docker-compose build
   only:
-    - project
+    - project  # Only run on the 'project' branch (you can change this to 'main' or your desired branch)
 
+# Test Stage: Run basic tests (dummy tests, or you can replace with real tests)
 test_config:
   stage: test
   script:
     - cd $CI_PROJECT_DIR
-    - docker-compose config
-    - docker-compose build --dry-run
+    - docker-compose config  # Check the validity of the docker-compose file
+    - docker-compose build --dry-run  # Validate build without actual execution
   only:
-    - project
+    - project  # Only run on the 'project' branch (adjust as necessary)
 
+# Deploy Stage: Deploy the Docker containers using docker-compose
 deploy_services:
   stage: deploy
   script:
     - cd $CI_PROJECT_DIR
-    - docker-compose up -d
+    - docker-compose up -d  # Deploy in detached mode
   only:
-    - project
-  when: manual
+    - project  # Only run on the 'project' branch
+  when: manual  # Set to manual if you want to trigger deployment manually
