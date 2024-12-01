@@ -4,24 +4,22 @@ stages:
   - deploy
 
 variables:
-  # Set the correct Docker host and disable TLS
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""  # Disable TLS, since we are using DinD without TLS
-  DOCKER_DRIVER: overlay2
-  DOCKER_NETWORK_MODE: host
+  DOCKER_HOST: tcp://docker:2375   # Docker Daemon URL (DinD)
+  DOCKER_TLS_CERTDIR: ""           # Disable TLS for Docker-in-Docker
+  DOCKER_DRIVER: overlay2          # Docker storage driver
+  DOCKER_NETWORK_MODE: bridge      # Docker network mode
 
-image: docker:latest  # Use the Docker image for the runner
+image: docker:latest               # Use Docker image for GitLab runner
 
 services:
-  - name: docker:dind  # Docker-in-Docker service
-    alias: docker  # Set alias for easy access
-    command: ["--tls=false"]  # Disable TLS for DinD (important for communication)
+  - name: docker:dind              # Docker-in-Docker service
+    alias: docker                  # Alias for Docker service
+    command: ["--tls=false"]       # Disable TLS for Docker-in-Docker
 
 before_script:
-  # Install necessary packages and tools for the pipeline
   - apk update
-  - apk add --no-cache docker-compose python3 git
-  # Diagnostic commands to help troubleshoot network issues
+  - apk add --no-cache docker-compose python3 git  # Install Docker Compose, Python3, and Git
+  # Diagnostic commands to ensure everything is working
   - echo "Hostname resolution:"
   - cat /etc/hosts
   - echo "Trying to resolve docker:"
@@ -29,31 +27,31 @@ before_script:
   - echo "Checking network interfaces:"
   - ip addr
 
-# Build Stage: Build the Docker containers using docker-compose
+# Build Stage: Build all the services using Docker Compose
 build_services:
   stage: build
   script:
     - cd $CI_PROJECT_DIR
     - docker-compose build
   only:
-    - project  # Only run on the 'project' branch (you can change this to 'main' or your desired branch)
+    - main  # Adjust the branch name accordingly (e.g., 'main' or 'project')
 
-# Test Stage: Run basic tests (dummy tests, or you can replace with real tests)
+# Test Stage: Validate Docker Compose file and run a dry run of builds
 test_config:
   stage: test
   script:
     - cd $CI_PROJECT_DIR
-    - docker-compose config  # Check the validity of the docker-compose file
-    - docker-compose build --dry-run  # Validate build without actual execution
+    - docker-compose config  # Validate the docker-compose.yml file
+    - docker-compose build --dry-run  # Dry-run to check the build process
   only:
-    - project  # Only run on the 'project' branch (adjust as necessary)
+    - main  # Adjust the branch name accordingly (e.g., 'main' or 'project')
 
-# Deploy Stage: Deploy the Docker containers using docker-compose
+# Deploy Stage: Deploy the services using Docker Compose
 deploy_services:
   stage: deploy
   script:
     - cd $CI_PROJECT_DIR
-    - docker-compose up -d  # Deploy in detached mode
+    - docker-compose up -d  # Run the services in detached mode
   only:
-    - project  # Only run on the 'project' branch
-  when: manual  # Set to manual if you want to trigger deployment manually
+    - main  # Adjust the branch name accordingly
+  when: manual  # Deploy is triggered manually in the GitLab UI
