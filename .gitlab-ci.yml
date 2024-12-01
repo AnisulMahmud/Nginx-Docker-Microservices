@@ -4,13 +4,16 @@ stages:
   - deploy
 
 variables:
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
   DOCKER_DRIVER: overlay2
+  DOCKER_NETWORK_MODE: host
 
 image: docker:latest
 services:
-  - docker:dind
+  - name: docker:dind
+    alias: docker
+    command: ["--tls=false"]
 
 before_script:
   - apk update
@@ -18,8 +21,13 @@ before_script:
       docker-compose 
       python3 
       git
-  - docker info
-  - docker-compose version
+  # Diagnostic commands
+  - echo "Hostname resolution:"
+  - cat /etc/hosts
+  - echo "Trying to resolve docker:"
+  - nslookup docker || true
+  - echo "Checking network interfaces:"
+  - ip addr
 
 build_services:
   stage: build
