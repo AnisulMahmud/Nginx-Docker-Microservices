@@ -1,3 +1,4 @@
+```yaml
 stages:
   - build
   - test
@@ -8,25 +9,19 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   DOCKER_DRIVER: overlay2
 
-# Global image and services configuration
 image: docker:latest
 services:
   - docker:dind
 
-# Install dependencies and prepare environment
 before_script:
   - apk update
   - apk add --no-cache 
       docker-compose 
       python3 
-      py3-pip 
       git
-  - pip3 install docker-compose
   - docker info
   - docker-compose version
-  - git --version
 
-# Build all services
 build_services:
   stage: build
   script:
@@ -35,7 +30,6 @@ build_services:
   only:
     - project
 
-# Configuration and lint check
 test_config:
   stage: test
   script:
@@ -45,21 +39,6 @@ test_config:
   only:
     - project
 
-# Optional: Run actual tests if you have them
-run_tests:
-  stage: test
-  script:
-    - cd $CI_PROJECT_DIR
-    - if [ -d "tests" ]; then
-        docker-compose run test;
-      else
-        echo "No tests directory found";
-      fi
-  only:
-    - project
-  allow_failure: true
-
-# Deploy stage (manual approval)
 deploy_services:
   stage: deploy
   script:
@@ -68,3 +47,4 @@ deploy_services:
   only:
     - project
   when: manual
+```
