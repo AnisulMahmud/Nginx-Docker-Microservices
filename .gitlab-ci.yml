@@ -3,59 +3,34 @@ stages:
   - test
   - deploy
 
-# Variables for Docker-in-Docker setup
 variables:
-  DOCKER_HOST: tcp://docker:2375  # Docker Daemon URL (DinD)
-  DOCKER_TLS_CERTDIR: ""  # Disable TLS for Docker-in-Docker
-  DOCKER_DRIVER: overlay2  # Docker storage driver
-  DOCKER_NETWORK_MODE: bridge  # Docker network mode
+  DOCKER_DRIVER: overlay2
 
-# Use Docker as the base image for GitLab CI
-image: docker:latest
-
-# Docker-in-Docker service configuration
 services:
-  - name: docker:dind  # Docker-in-Docker service
-    alias: docker  # Alias for Docker service
-    command: ["--tls=false"]  # Disable TLS for Docker-in-Docker
+  - docker:dind
 
-# Before script that runs common setup steps
 before_script:
-  - apk update
-  - apk add --no-cache docker-compose python3 git  # Install Docker Compose, Python3, and Git
-  # Diagnostic commands to ensure everything is working
-  - echo "Hostname resolution:"
-  - cat /etc/hosts
-  - echo "Trying to resolve docker:"
-  - nslookup docker || true
-  - echo "Checking network interfaces:"
-  - ip addr
+  - docker info
 
-# Build Stage: Build all the services using Docker Compose
-build_services:
+build:
   stage: build
   script:
-    - cd $CI_PROJECT_DIR  # Navigate to the GitLab project directory
-    - docker-compose build  # Build the Docker containers using docker-compose
-  only:
-    - project  # Run only for the 'project' branch
+    - docker-compose -f docker-compose.yml build
 
-# Test Stage: Validate Docker Compose file and perform a dry run of builds
-test_config:
+test:
   stage: test
   script:
-    - cd $CI_PROJECT_DIR  # Navigate to the GitLab project directory
-    - docker-compose config  # Validate the docker-compose.yml file
-    - docker-compose build --dry-run  # Perform a dry-run to check build process
-  only:
-    - project  # Run only for the 'project' branch
+    - docker-compose -f docker-compose.yml up -d
+    - docker-compose -f docker-compose.yml exec service1-1 pytest /app/tests
+    - docker-compose -f docker-compose.yml exec service1-2 pytest /app/tests
+    - docker-compose -f docker-compose.yml exec service1-3 pytest /app/tests
+    - docker-compose -f docker-compose.yml exec service2 pytest /app/tests
+  after_script:
+    - docker-compose -f docker-compose.yml down
 
-# Deploy Stage: Deploy the services using Docker Compose
-deploy_services:
+deploy:
   stage: deploy
   script:
-    - cd $CI_PROJECT_DIR  # Navigate to the GitLab project directory
-    - docker-compose up -d  # Run the services in detached mode
+    - docker-compose -f docker-compose.yml up -d
   only:
-    - project  # Run only for the 'project' branch
-  when: manual  # Allow manual deployment via GitLab UI
+    - project
