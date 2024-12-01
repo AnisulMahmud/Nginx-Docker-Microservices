@@ -1,4 +1,3 @@
-```yaml
 stages:
   - build
   - test
@@ -47,4 +46,3 @@ deploy_services:
   only:
     - project
   when: manual
-```
