@@ -44,7 +44,7 @@ test_config:
     - docker-compose config  # Validate the docker-compose.yml file
     - docker-compose build --dry-run  # Dry-run to check the build process
   only:
-    - main  # Adjust the branch name accordingly (e.g., 'main' or 'project')
+    - project  # Adjust the branch name accordingly (e.g., 'main' or 'project')
 
 # Deploy Stage: Deploy the services using Docker Compose
 deploy_services:
