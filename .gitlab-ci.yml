@@ -7,9 +7,12 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
 
-image: python:3.9-slim  # Use a Python image for testing
+image: docker:20.10.7  # Use a Docker image for the runner
 services:
   - docker:20.10-dind  # Ensure Docker is available for later stages
+
+before_script:
+  - docker info  # Check Docker info to ensure it's running
 
 # Build Stage
 build:
