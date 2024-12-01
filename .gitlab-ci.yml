@@ -53,5 +53,5 @@ deploy_services:
     - cd $CI_PROJECT_DIR
     - docker-compose up -d  # Run the services in detached mode
   only:
-    - main  # Adjust the branch name accordingly
+    - project  # Adjust the branch name accordingly
   when: manual  # Deploy is triggered manually in the GitLab UI
