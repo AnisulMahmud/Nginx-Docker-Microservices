@@ -7,37 +7,45 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
 
-image: docker:20.10.7  # Use a Docker image for the runner
-services:
-  - docker:20.10-dind  # Ensure Docker is available for later stages
+# Use a Docker-in-Docker image
+image: docker:20.10.7
 
+# Docker-in-Docker service
+services:
+  - docker:20.10-dind
+
+# Ensure Docker and Docker Compose are available
 before_script:
-  - docker info  # Check Docker info to ensure it's running
+  - docker info
+  - apk add --no-cache docker-compose
 
 # Build Stage
-build:
+build_services:
   stage: build
   script:
+    - cd /builds/$CI_PROJECT_PATH
     - echo "Building services..."
     - docker-compose build
   only:
     - project
 
 # Test Stage
-test:
+test_services:
+  image: python:3.9
   stage: test
   script:
-    - echo "Running dummy test..."
     - pip install pytest
     - pytest tests/
   only:
     - project
 
 # Deploy Stage
-deploy:
+deploy_services:
   stage: deploy
   script:
+    - cd /builds/$CI_PROJECT_PATH
     - echo "Deploying application..."
     - docker-compose up -d
   only:
     - project
+  when: manual  # Optional: requires manual approval
