@@ -1,0 +1,40 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+
+image: python:3.9-slim  # Use a Python image for testing
+services:
+  - docker:20.10-dind  # Ensure Docker is available for later stages
+
+# Build Stage
+build:
+  stage: build
+  script:
+    - echo "Building services..."
+    - docker-compose build
+  only:
+    - project
+
+# Test Stage
+test:
+  stage: test
+  script:
+    - echo "Running dummy test..."
+    - pip install pytest
+    - pytest tests/
+  only:
+    - project
+
+# Deploy Stage
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying application..."
+    - docker-compose up -d
+  only:
+    - project
