@@ -14,7 +14,7 @@ before_script:
   - apk add --no-cache net-tools 
   - docker info
   - docker-compose -f docker-compose.yml down  
-  - if netstat -tuln | grep ':5000' >/dev/null ; then kill -9 $(netstat -tuln | grep ':5000' | awk '{print $7}' | cut -d'/' -f1) ; fi  # Ensure port 5000 is free
+  - if netstat -tuln | grep ':5000' >/dev/null ; then kill -9 $(netstat -tuln | grep ':5000' | awk '{print $7}' | cut -d'/' -f1) ; fi  
 
 build:
   stage: build
