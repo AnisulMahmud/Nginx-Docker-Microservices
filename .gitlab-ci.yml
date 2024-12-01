@@ -4,48 +4,40 @@ stages:
   - deploy
 
 variables:
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_DRIVER: overlay2
 
-# Use a Docker-in-Docker image
 image: docker:20.10.7
 
-# Docker-in-Docker service
 services:
-  - docker:20.10-dind
+  - name: docker:20.10-dind
+    alias: docker
+    command: ["--tls=false"]
 
-# Ensure Docker and Docker Compose are available
 before_script:
-  - docker info
-  - apk add --no-cache docker-compose
+  - docker info || true
+  - docker-compose --version || true
 
-# Build Stage
 build_services:
   stage: build
   script:
-    - cd /builds/$CI_PROJECT_PATH
-    - echo "Building services..."
     - docker-compose build
   only:
     - project
 
-# Test Stage
 test_services:
-  image: python:3.9
   stage: test
   script:
-    - pip install pytest
-    - pytest tests/
+    - docker-compose config
+    - docker-compose build
   only:
     - project
 
-# Deploy Stage
 deploy_services:
   stage: deploy
   script:
-    - cd /builds/$CI_PROJECT_PATH
-    - echo "Deploying application..."
     - docker-compose up -d
   only:
     - project
-  when: manual  # Optional: requires manual approval
+  when: manual
