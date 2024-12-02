@@ -3,17 +3,16 @@ stages:
   - test
   - deploy
 
-variables:
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_DRIVER: overlay2
-
 services:
   - docker:dind
 
 before_script:
-  # Install dependencies needed for building and testing
+  # Install dependencies and set up environment
   - apk add --no-cache openjdk11 python3 py3-pip bash
-  - pip install flask requests
+  - python3 -m venv /tmp/venv                  # Create a virtual environment
+  - . /tmp/venv/bin/activate                   # Activate the virtual environment
+  - pip install --upgrade pip                  # Upgrade pip
+  - pip install flask requests                 # Install Python dependencies
   - docker-compose version
 
 build:
