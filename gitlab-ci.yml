@@ -1,0 +1,57 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+
+services:
+  - docker:dind
+
+before_script:
+  # Install dependencies needed for building and testing
+  - apk add --no-cache openjdk11 python3 py3-pip bash
+  - pip install flask requests
+  - docker-compose version
+
+build:
+  stage: build
+  script:
+    - echo "Building Java service..."
+    - docker build -t java-service:latest -f Dockerfile.java .
+    - echo "Building Python service..."
+    - docker build -t python-service:latest -f Dockerfile.python .
+    - echo "Building all services with Docker Compose..."
+    - docker-compose build
+  only:
+    - project
+
+test:
+  stage: test
+  script:
+    - echo "Starting services for testing..."
+    - docker-compose up -d  # Start services in detached mode
+    - sleep 5               # Wait for services to initialize
+
+    - echo "Running Java service tests..."
+    - javac tests/MainTest.java -cp .:/path/to/junit-5.8.2.jar
+    - java -cp .:/path/to/junit-5.8.2.jar org.junit.runner.JUnitCore tests.MainTest
+
+    - echo "Running Python service tests..."
+    - python3 -m unittest discover -s tests -p "test_*.py"
+
+    - echo "Stopping services after tests..."
+    - docker-compose down
+  only:
+    - project
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying services..."
+    - docker-compose up -d  # Deploy services in detached mode
+    - echo "Services deployed successfully!"
+  only:
+    - project
