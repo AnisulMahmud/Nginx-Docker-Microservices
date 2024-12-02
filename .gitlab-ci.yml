@@ -1,36 +1,28 @@
 stages:
-  - build
   - test
-  - deploy
 
 services:
   - docker:dind
 
 before_script:
-  # Install dependencies and set up environment
+  # Install dependencies
   - apk add --no-cache openjdk11 python3 py3-pip bash
   - python3 -m venv /tmp/venv                  # Create a virtual environment
   - . /tmp/venv/bin/activate                   # Activate the virtual environment
   - pip install --upgrade pip                  # Upgrade pip
   - pip install flask requests                 # Install Python dependencies
-  - docker-compose version
-
-build:
-  stage: build
-  script:
-    - echo "Building Service1..."
-    - docker build -t service1:latest -f service1/Dockerfile service1/
-    - echo "Building Service2..."
-    - docker build -t service2:latest -f service2/Dockerfile service2/
-  only:
-    - project
+  - docker-compose version                     # Confirm docker-compose is installed
 
 test:
   stage: test
   script:
+    - echo "Checking if nginx.conf file exists..."
+    - ls -l ./nginx/nginx.conf                 # Debugging to confirm nginx.conf exists
+    - ls -l ./nginx/                           # Debugging to confirm the nginx directory
+
     - echo "Starting services for testing..."
-    - docker-compose up -d  # Start services in detached mode
-    - sleep 5               # Wait for services to initialize
+    - docker-compose up -d                    # Start services in detached mode
+    - sleep 5                                 # Wait for services to initialize
 
     - echo "Running Java service tests for Service1..."
     - javac -cp ./libs/junit-5.8.2.jar tests/MainTest.java
@@ -40,15 +32,6 @@ test:
     - python3 -m unittest discover -s tests -p "test_*.py"
 
     - echo "Stopping services after tests..."
-    - docker-compose down
-  only:
-    - project
-
-deploy:
-  stage: deploy
-  script:
-    - echo "Deploying services..."
-    - docker-compose up -d  # Deploy services in detached mode
-    - echo "Services deployed successfully!"
+    - docker-compose down                     # Stop services after testing
   only:
     - project
