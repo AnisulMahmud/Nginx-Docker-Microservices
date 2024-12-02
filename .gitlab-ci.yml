@@ -11,9 +11,13 @@ variables:
   DOCKER_DRIVER: overlay2
 
 before_script:
-  # Install dependencies
+  # Install base dependencies
   - apk add --no-cache python3 py3-pip bash
-  - pip3 install --no-cache-dir virtualenv  # Install virtualenv globally
+  # Create and activate a virtual environment
+  - python3 -m venv /tmp/venv
+  - . /tmp/venv/bin/activate
+  - pip install --upgrade pip
+  - pip install flask requests unittest-xml-reporting
 
 build:
   stage: build
@@ -31,17 +35,15 @@ build:
 test:
   stage: test
   script:
-    # Create a virtual environment for testing
-    - echo "Setting up virtual environment..."
-    - virtualenv /tmp/venv
-    - source /tmp/venv/bin/activate
-    - pip install --no-cache-dir requests unittest-xml-reporting
+    - echo "Setting up virtual environment for testing..."
+    - python3 -m venv /tmp/venv
+    - . /tmp/venv/bin/activate
+    - pip install requests unittest-xml-reporting
 
     - echo "Starting Docker services for testing..."
     - docker-compose up -d                    # Start all services
     - sleep 10                                # Wait for services to initialize
 
-    # Run Python tests
     - echo "Running Python tests..."
     - python3 -m unittest discover -s tests -p "test_*.py"
 
