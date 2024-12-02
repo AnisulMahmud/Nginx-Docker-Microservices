@@ -18,12 +18,10 @@ before_script:
 build:
   stage: build
   script:
-    - echo "Building Java service..."
-    - docker build -t java-service:latest -f Dockerfile.java .
-    - echo "Building Python service..."
-    - docker build -t python-service:latest -f Dockerfile.python .
-    - echo "Building all services with Docker Compose..."
-    - docker-compose build
+    - echo "Building Service1..."
+    - docker build -t service1:latest -f service1/Dockerfile service1/
+    - echo "Building Service2..."
+    - docker build -t service2:latest -f service2/Dockerfile service2/
   only:
     - project
 
@@ -34,11 +32,11 @@ test:
     - docker-compose up -d  # Start services in detached mode
     - sleep 5               # Wait for services to initialize
 
-    - echo "Running Java service tests..."
-    - javac tests/MainTest.java -cp .:/path/to/junit-5.8.2.jar
-    - java -cp .:/path/to/junit-5.8.2.jar org.junit.runner.JUnitCore tests.MainTest
+    - echo "Running Java service tests for Service1..."
+    - javac -cp ./libs/junit-5.8.2.jar tests/MainTest.java
+    - java -cp ./libs/junit-5.8.2.jar:tests org.junit.runner.JUnitCore MainTest
 
-    - echo "Running Python service tests..."
+    - echo "Running Python service tests for Service2..."
     - python3 -m unittest discover -s tests -p "test_*.py"
 
     - echo "Stopping services after tests..."
