@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 600px; /* Increased from 400px to 600px */
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 2rem; /* Increased font size */
+        }
+        .form-group {
+            margin-bottom: 1.5rem; /* Increased from 1rem */
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem; /* Increased font size */
+        }
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem; /* Increased from 0.5rem */
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem; /* Increased font size */
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem; /* Increased padding */
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 1.1rem; /* Increased font size */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            width: 100%;
+            height: 300px; /* Increased from 200px */
+            margin-top: 1.5rem; /* Increased from 1rem */
+            resize: vertical;
+            font-family: monospace;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: scroll;
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+        .error {
+            color: red;
+            margin-top: 0.5rem;
+            font-size: 1rem; /* Increased font size */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Service Dashboard</h1>
+
+        <!-- Login Form -->
+        <div id="login-form">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button onclick="login()">Login</button>
+            <p id="login-error" class="error"></p>
+        </div>
+
+        <!-- Main Interface (Hidden initially) -->
+        <div id="main-interface" style="display: none;">
+            <button onclick="sendRequest()">REQUEST</button>
+            <button onclick="stopServices()">STOP</button>
+            <textarea id="output" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const authHeader = 'Basic ' + btoa(username + ':' + password);
+
+            fetch('/api/request', {
+                method: 'GET',
+                headers: {
+                    'Authorization': authHeader
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('main-interface').style.display = 'block';
+                } else {
+                    document.getElementById('login-error').textContent = 'Invalid username or password.';
+                }
+            })
+            .catch(error => {
+                document.getElementById('login-error').textContent = 'Error logging in: ' + error;
+            });
+        }
+
+        function sendRequest() {
+            fetch('/api/request')
+                .then(response => response.json())
+                .then(data => {
+                    const prettyPrintedJson = JSON.stringify(data, null, 2);
+                    document.getElementById('output').value = prettyPrintedJson;
+                })
+                .catch(error => {
+                    document.getElementById('output').value = 'Error: ' + error;
+                });
+        }
+
+        function stopServices() {
+            fetch('/api/stop', { method: 'POST' })
+                .then(() => {
+                    window.location.reload();
+                    document.getElementById('output').value = 'Services stopped. Docker Compose has been shut down.';
+                    // Show login form again after a short delay
+                    setTimeout(() => {
+                        document.getElementById('main-interface').style.display = 'none';
+                        document.getElementById('login-form').style.display = 'block';
+                        document.getElementById('username').value = '';
+                        document.getElementById('password').value = '';
+                        document.getElementById('login-error').textContent = '';
+                    }, 2000); // 2 second delay
+                })
+                .catch(error => {
+                    document.getElementById('output').value = 'Error stopping services: ' + error;
+                });
+        }
+    </script>
+</body>
+</html>

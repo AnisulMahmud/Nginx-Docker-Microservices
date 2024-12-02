@@ -1,37 +1,60 @@
 stages:
+  - build
   - test
+  - deploy
 
 services:
   - docker:dind
 
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+
 before_script:
   # Install dependencies
-  - apk add --no-cache openjdk11 python3 py3-pip bash
-  - python3 -m venv /tmp/venv                  # Create a virtual environment
-  - . /tmp/venv/bin/activate                   # Activate the virtual environment
-  - pip install --upgrade pip                  # Upgrade pip
-  - pip install flask requests                 # Install Python dependencies
-  - docker-compose version                     # Confirm docker-compose is installed
+  - apk add --no-cache python3 py3-pip bash
+  - pip3 install --no-cache-dir virtualenv  # Install virtualenv globally
+
+build:
+  stage: build
+  script:
+    - echo "Building service1..."
+    - docker build -t service1:latest -f service1/Dockerfile service1/
+    - echo "Building service2..."
+    - docker build -t service2:latest -f service2/Dockerfile service2/
+    - echo "Building Nginx..."
+    - docker build -t nginx:latest -f nginx/Dockerfile nginx/
+    - echo "Building complete!"
+  only:
+    - project
 
 test:
   stage: test
   script:
-    - echo "Checking if nginx.conf file exists..."
-    - ls -l ./nginx/nginx.conf                 # Debugging to confirm nginx.conf exists
-    - ls -l ./nginx/                           # Debugging to confirm the nginx directory
+    # Create a virtual environment for testing
+    - echo "Setting up virtual environment..."
+    - virtualenv /tmp/venv
+    - source /tmp/venv/bin/activate
+    - pip install --no-cache-dir requests unittest-xml-reporting
 
-    - echo "Starting services for testing..."
-    - docker-compose up -d                    # Start services in detached mode
-    - sleep 5                                 # Wait for services to initialize
+    - echo "Starting Docker services for testing..."
+    - docker-compose up -d                    # Start all services
+    - sleep 10                                # Wait for services to initialize
 
-    - echo "Running Java service tests for Service1..."
-    - javac -cp ./libs/junit-5.8.2.jar tests/MainTest.java
-    - java -cp ./libs/junit-5.8.2.jar:tests org.junit.runner.JUnitCore MainTest
-
-    - echo "Running Python service tests for Service2..."
+    # Run Python tests
+    - echo "Running Python tests..."
     - python3 -m unittest discover -s tests -p "test_*.py"
 
-    - echo "Stopping services after tests..."
-    - docker-compose down                     # Stop services after testing
+    - echo "Stopping services after testing..."
+    - docker-compose down                     # Stop all services
+  only:
+    - project
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying services..."
+    - docker-compose up -d                    # Start all services in detached mode
+    - echo "Services deployed successfully!"
   only:
     - project

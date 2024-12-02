@@ -1,0 +1,64 @@
+services:
+  # Service instances for service1
+  service1-instance1:
+    build: ./service1
+    volumes:
+      - ./service1:/app/service1
+    networks:
+      - app_network
+
+  service1-instance2:
+    build: ./service1
+    volumes:
+      - ./service1:/app/service1
+    networks:
+      - app_network
+
+  service1-instance3:
+    build: ./service1
+    volumes:
+      - ./service1:/app/service1
+    networks:
+      - app_network
+
+  # Service for service2
+  service2:
+    build: ./service2
+    networks:
+      - app_network
+
+  # NGINX service for load balancing and authentication
+  nginx:
+    build: ./nginx
+    ports:
+      - "8198:8198"
+    depends_on:
+      - service1-instance1
+      - service1-instance2
+      - service1-instance3
+      - service2
+      - stop-service
+    networks:
+      - app_network
+
+  # Stop service to stop all containers (this is your stop-service)
+  stop-service:
+    build:
+      context: ./stop_service
+    container_name: stop-service
+    command: python /app/stop_service/stop_service.py
+    volumes:
+      - /usr/local/bin/docker:/usr/local/bin/docker
+      - ./docker-compose.yaml:/app/docker-compose.yaml  # Mount the docker-compose file
+      - /var/run/docker.sock:/var/run/docker.sock  # Mount Docker socket for Docker commands
+      - ./stop_service:/app/stop_service  # Mount stop_service folder
+      - .:/app 
+    ports:
+      - "8210:8210"
+    networks:
+      - app_network
+    user: root  # Run as root to ensure Docker socket access
+
+networks:
+  app_network:
+    driver: bridge

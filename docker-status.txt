@@ -1,12 +1,8 @@
-CONTAINER ID   IMAGE                                   COMMAND                  CREATED         STATUS         PORTS                                       NAMES
-7a2fe97d62c5   nginx:stable-alpine                     "/docker-entrypoint.…"   2 minutes ago   Up 5 seconds   0.0.0.0:8198->80/tcp, :::8198->80/tcp       nginx-docker-microservices_nginx_1
-d3bd18309722   nginx-docker-microservices_service2     "python app.py"          2 minutes ago   Up 6 seconds   0.0.0.0:5000->5000/tcp, :::5000->5000/tcp   nginx-docker-microservices_service2_1
-e484d231b3d9   nginx-docker-microservices_service1-3   "java -cp src Main"      2 minutes ago   Up 6 seconds   8199/tcp                                    nginx-docker-microservices_service1-3_1
-27c5a0b8dfdb   nginx-docker-microservices_service1-1   "java -cp src Main"      2 minutes ago   Up 6 seconds   8199/tcp                                    nginx-docker-microservices_service1-1_1
-92af18b34257   nginx-docker-microservices_service1-2   "java -cp src Main"      2 minutes ago   Up 6 seconds   8199/tcp                                    nginx-docker-microservices_service1-2_1
-
-NETWORK ID     NAME                                     DRIVER    SCOPE
-959e85a6e2c0   bridge                                   bridge    local
-d9685ac2ad94   host                                     host      local
-19238947c3e5   nginx-docker-microservices_app-network   bridge    local
-78db2f630f59   none                                     null      local
+CONTAINER ID   IMAGE                                     COMMAND                  CREATED       STATUS       PORTS      NAMES
+11c48f539151   docker-compose-exercise-service2:latest   "docker-entrypoint.s…"   2 hours ago   Up 2 hours   8200/tcp   boring_hopper
+3005be2533f2   docker-compose-exercise-service1:latest   "python app.py"          2 hours ago   Up 2 hours   8199/tcp   quirky_margulis
+NETWORK ID     NAME                     DRIVER    SCOPE
+944970a9610e   bridge                   bridge    local
+ed8b46ffa765   host                     host      local
+244751e4957f   none                     null      local
+e3b744c0a49b   web2assignment_backend   bridge    local

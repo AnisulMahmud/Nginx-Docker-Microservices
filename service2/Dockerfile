@@ -1,22 +1,17 @@
-FROM python:3.9-slim
+# Use Node.js image
+FROM node:14
 
-
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
+# Copy app files
+COPY app.js .
 
-# Install procps to get the ps command
-RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
+# Install required dependencies
+RUN npm install express
 
-# Copy the current directory contents intot the container 
-COPY app.py /app/app.py
+# Expose the required port
+EXPOSE 8200
 
-# Install any needed packages
-RUN pip install --no-cache-dir flask
-
-
-# Expose the port of my application runs on
-EXPOSE 5000
-
-# Specify the entry point to run the compiled java class
-ENTRYPOINT [ "python", "app.py" ]
+# Command to run the app
+CMD ["node", "app.js"]
