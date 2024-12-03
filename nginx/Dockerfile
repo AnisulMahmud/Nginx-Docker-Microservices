@@ -19,18 +19,16 @@
 # COPY --chown=nginx:nginx index.html /usr/share/nginx/html/index.html
 
 
+# Base NGINX image
 FROM nginx:alpine
 
-# Remove existing files
-RUN rm -f /etc/nginx/nginx.conf /etc/nginx/.htpasswd /usr/share/nginx/html/index.html
+# Remove default nginx.conf
+RUN rm /etc/nginx/nginx.conf
 
-# Create necessary directories
-RUN mkdir -p /etc/nginx /usr/share/nginx/html
-
-# Copy files with explicit permissions
+# Copy your custom configuration, password file, and index.html
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY .htpasswd /etc/nginx/.htpasswd
 COPY index.html /usr/share/nginx/html/index.html
 
-# Set correct permissions
-RUN chmod 644 /etc/nginx/nginx.conf /etc/nginx/.htpasswd /usr/share/nginx/html/index.html
+# Expose the port
+EXPOSE 80

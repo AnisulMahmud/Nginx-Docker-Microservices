@@ -1,38 +1,87 @@
+# version: '3.8'
+
+# services:
+#   service1-1:
+#     build: ./service1
+#     volumes:
+#       - ./service1:/app/service1:ro
+#     networks:
+#       - app-network
+
+#   service1-2:
+#     build: ./service1
+#     volumes:
+#       - ./service1:/app/service1:ro
+#     networks:
+#       - app-network
+
+#   service1-3:
+#     build: ./service1
+#     volumes:
+#       - ./service1:/app/service1:ro
+#     networks:
+#       - app-network
+
+#   service2:
+#     build: ./service2
+#     ports:
+#       - "5000:5000"
+#     volumes:
+#       - ./service2:/app/service2:ro
+#     networks:
+#       - app-network
+
+#   nginx:
+#     build: ./nginx
+#     ports:
+#       - "8198:80"
+#     depends_on:
+#       - service1-1
+#       - service1-2
+#       - service1-3
+#       - service2
+#     volumes:
+#       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+#       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+#       - ./nginx/index.html:/usr/share/nginx/html/index.html:ro
+#     networks:
+#       - app-network
+
+# networks:
+#   app-network:
+#     driver: bridge
+
 version: '3.8'
 
 services:
   service1-1:
-    build: ./service1
-    volumes:
-      - ./service1:/app/service1:ro
+    build:
+      context: ./service1
     networks:
       - app-network
 
   service1-2:
-    build: ./service1
-    volumes:
-      - ./service1:/app/service1:ro
+    build:
+      context: ./service1
     networks:
       - app-network
 
   service1-3:
-    build: ./service1
-    volumes:
-      - ./service1:/app/service1:ro
+    build:
+      context: ./service1
     networks:
       - app-network
 
   service2:
-    build: ./service2
+    build:
+      context: ./service2
     ports:
       - "5000:5000"
-    volumes:
-      - ./service2:/app/service2:ro
     networks:
       - app-network
 
   nginx:
-    build: ./nginx
+    image: nginx:alpine
     ports:
       - "8198:80"
     depends_on:
@@ -40,8 +89,9 @@ services:
       - service1-2
       - service1-3
       - service2
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile  # Specify a custom Dockerfile
     networks:
       - app-network
 
