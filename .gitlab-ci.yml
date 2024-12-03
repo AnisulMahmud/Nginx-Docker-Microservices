@@ -5,7 +5,10 @@ stages:
 
 services:
   - name: docker:dind
-    # command: ["--tls=false", "--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
 
 before_script:
   # Install required dependencies
@@ -43,25 +46,39 @@ test:
   script:
     - echo "Starting Docker services for testing..."
     
-    # Additional debug information
-    - docker-compose config
+    # Verify Docker Compose configuration
+    - echo "Validating Docker Compose configuration..."
+    - docker-compose config || exit 1
     
-    # Try to start services with more verbose output
+    # Start services and wait for readiness
+    - echo "Starting Docker Compose services..."
     - docker-compose up -d --build
+    - echo "Waiting for services to initialize..."
+    - sleep 30  # Increased wait time to ensure services are ready
     
-    # Extended wait time and service status check
-    - sleep 15
+    # Check service status
+    - echo "Checking running services..."
     - docker-compose ps
-    - docker-compose logs
     
-    # Test Python service (service2)
+    # Validate NGINX configuration
+    - echo "Validating NGINX configuration..."
+    - docker-compose exec nginx nginx -t || exit 1
+    
+    # Test NGINX connectivity to upstream services
+    - echo "Testing upstream connectivity..."
+    - docker-compose exec nginx curl -u anisul-mahmud:docker http://service1-1:8199/api/ || echo "Service1 API test failed"
+    - docker-compose exec nginx curl -u anisul-mahmud:docker http://service2:5000 || echo "Service2 API test failed"
+    
+    # Run Python service tests
     - echo "Running Python tests for service2..."
-    - python3 -m unittest discover -s tests -p "test_app.py"
+    - python3 -m unittest discover -s tests -p "test_app.py" || exit 1
     
-    # Additional debugging for NGINX
-    - docker-compose exec -T nginx cat /etc/nginx/nginx.conf || echo "Failed to read NGINX config"
+    # Collect logs for debugging
+    - echo "Collecting NGINX logs for debugging..."
+    - docker-compose logs nginx
     
-    - echo "Stopping services after testing..."
+    # Stop services after testing
+    - echo "Stopping services..."
     - docker-compose down
   only:
     - project
