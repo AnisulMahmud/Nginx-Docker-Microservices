@@ -9,28 +9,19 @@ services:
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
-  MAX_PARALLEL_JOBS: "1" # Avoid conflicts in shared runners
 
 before_script:
   # Install required dependencies
-  - apk add --no-cache python3 py3-pip bash openjdk17 docker-compose
+  - apk add --no-cache python3 py3-pip bash docker-compose
   - python3 -m venv /tmp/venv
   - . /tmp/venv/bin/activate
-  - pip install --upgrade pip
-  - pip install flask requests unittest-xml-reporting
+  - pip install --upgrade pip flask requests unittest-xml-reporting
 
 build:
   stage: build
   script:
-    - echo "Building service1 (Java)..."
-    - docker build -t service1:latest ./service1
-    - echo "Building service2 (Python)..."
-    - docker build -t service2:latest ./service2
-    - echo "Building nginx..."
-    - docker build -t nginx:latest ./nginx
-    - echo "Build phase completed!"
-    
-    # Verify Docker images
+    - echo "Building all services..."
+    - docker-compose build  # Build all services in one command
     - docker images
   only:
     - project
@@ -38,61 +29,26 @@ build:
 test:
   stage: test
   script:
-    # Clean up any lingering containers
-    - echo "Cleaning up previous Docker containers..."
-    - docker-compose down || true
-    - docker rm -f $(docker ps -aq) || true
-
-    # Validate Docker Compose configuration
-    - echo "Validating Docker Compose configuration..."
-    - docker-compose config || exit 1
-    
-    # Start services
-    - echo "Starting Docker Compose services..."
-    - docker-compose up -d --build
-
-    # Ensure services are ready
+    - echo "Starting services..."
+    - docker-compose up -d  # Start all services
     - echo "Waiting for services to initialize..."
-    - sleep 15
-    
-    # Check service status
-    - echo "Checking running services..."
-    - docker-compose ps
-
-    # Debug NGINX configuration
+    - sleep 15  # Allow services to start up
     - echo "Validating NGINX configuration..."
-    - docker-compose exec nginx nginx -t || exit 1
-    
-    # Test NGINX connectivity
-    - echo "Testing upstream connectivity..."
-    - docker-compose exec nginx curl -u anisul-mahmud:docker http://service1-1:8199/api/ || echo "Service1 API test failed"
-    - docker-compose exec nginx curl -u anisul-mahmud:docker http://service2:5000 || echo "Service2 API test failed"
-    
-    # Run Python service tests
-    - echo "Running Python tests for service2..."
-    - python3 -m unittest discover -s tests -p "test_app.py" || exit 1
-    
-    # Collect logs for debugging
-    - echo "Collecting NGINX logs for debugging..."
-    - docker-compose logs nginx
-
-    # Stop services after testing
+    - docker-compose exec nginx nginx -t  # Validate NGINX config
+    - echo "Testing connectivity..."
+    - curl -u anisul-mahmud:docker http://localhost:8198/api/ || echo "NGINX Test failed"
+    - python3 -m unittest discover -s tests -p "test_app.py"  # Run Python service tests
     - echo "Stopping services..."
-    - docker-compose down
+    - docker-compose down  # Stop all services
   only:
     - project
 
 deploy:
   stage: deploy
   script:
-    # Clean up before deployment
-    - echo "Cleaning up existing containers..."
-    - docker-compose down || true
-    - docker rm -f $(docker ps -aq) || true
-
     - echo "Deploying services..."
-    - docker-compose up -d --build
+    - docker-compose up -d  # Start services for productionsss
     - docker-compose ps
-    - echo "Deployment completed!"
   only:
     - project
+
