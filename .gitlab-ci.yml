@@ -1,4 +1,5 @@
 stages:
+  - build
   - test
   - deploy
 
@@ -6,38 +7,58 @@ services:
   - name: docker:dind
     command: ["--tls=false", "--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]
 
-
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
 
 before_script:
-  # Install base dependencies
-  - apk add --no-cache python3 py3-pip bash
+  # Install required dependencies
+  - apk add --no-cache python3 py3-pip bash openjdk17
   - python3 -m venv /tmp/venv
   - . /tmp/venv/bin/activate
   - pip install --upgrade pip
   - pip install flask requests unittest-xml-reporting
 
+build:
+  stage: build
+  script:
+    - echo "Building service1 (Java)..."
+    - docker build -t service1:latest ./service1
+    - echo "Building service2 (Python)..."
+    - docker build -t service2:latest ./service2
+    - echo "Building nginx..."
+    - docker build -t nginx:latest ./nginx
+    - echo "Build phase completed!"
+  only:
+    - project
+
 test:
   stage: test
   script:
-    - echo "Cleaning up containers started by docker-compose..."
-    - docker-compose down --remove-orphans || echo "No containers to clean up"
     - echo "Starting Docker services for testing..."
-    - docker-compose up -d                    # Start all services
-    - sleep 10                                # Wait for services to initialize
-    - echo "Running Python tests..."
-    - python3 -m unittest discover -s tests -p "test_*.py"
+    - docker-compose up -d
+    - echo "Waiting for services to initialize..."
+    - sleep 10
+
+    # # Test Java service (service1)
+    # - echo "Running Java tests for service1..."
+    # - javac -cp ./tests MainTest.java
+    # - java -cp ./tests org.junit.runner.JUnitCore MainTest
+
+    # Test Python service (service2)
+    - echo "Running Python tests for service2..."
+    - python3 -m unittest discover -s tests -p "test_app.py"
+
     - echo "Stopping services after testing..."
-    - docker-compose down                     # Stop all services
+    - docker-compose down
   only:
     - project
 
 deploy:
   stage: deploy
   script:
-    - echo "Cleaning up old containers before deployment..."
-    - docker-compose down --remove-orphans || echo "No containers to clean up"
     - echo "Deploying services..."
-    - docker-compose up -d                    # Start all services in detached mode
-    - echo "Deployment phase completed!"
+    - docker-compose up -d
+    - echo "Deployment completed!"
   only:
     - project
