@@ -33,8 +33,11 @@ build:
 test:
   stage: test
   script:
+    - echo "Checking Docker status..."
+    - docker info || echo "Docker is not running!"
+    - docker ps -a
     - echo "Cleaning up old containers..."
-    - docker ps -aq | xargs -r docker rm -f  # Force remove all existing containers
+    - docker ps -aq | grep . && docker ps -aq | xargs docker rm -f || echo "No containers to clean up"
     - echo "Starting Docker services for testing..."
     - docker-compose up -d                    # Start all services
     - sleep 10                                # Wait for services to initialize
@@ -49,7 +52,7 @@ deploy:
   stage: deploy
   script:
     - echo "Cleaning up old containers before deployment..."
-    - docker ps -aq | xargs -r docker rm -f  # Force remove all existing containersss
+    - docker ps -aq | grep . && docker ps -aq | xargs docker rm -f || echo "No containers to clean up"
     - echo "Deploying services..."
     - docker-compose up -d                    # Start all services in detached mode
     - echo "Deployment phase completed!"
