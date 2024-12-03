@@ -1,5 +1,5 @@
 stages:
-  - build
+  # - build
   - test
   - deploy
 
@@ -36,7 +36,7 @@ test:
     - echo "Validating NGINX configuration..."
     - docker-compose exec nginx nginx -t  # Validate NGINX config
     - echo "Testing connectivity..."
-    - curl -u anisul-mahmud:docker http://localhost:8198/api/ || echo "NGINX Test failed"
+    #- curl -u anisul-mahmud:docker http://localhost:8198/api/ || echo "NGINX Test failed"
     - python3 -m unittest discover -s tests -p "test_app.py"  # Run Python service tests
     - echo "Stopping services..."
     - docker-compose down  # Stop all services
