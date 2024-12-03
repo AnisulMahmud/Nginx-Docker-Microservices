@@ -9,6 +9,7 @@ services:
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
+  MAX_PARALLEL_JOBS: "1" # Avoid conflicts in shared runners
 
 before_script:
   # Install required dependencies
@@ -37,8 +38,11 @@ build:
 test:
   stage: test
   script:
-    - echo "Starting Docker services for testing..."
-    
+    # Clean up any lingering containers
+    - echo "Cleaning up previous Docker containers..."
+    - docker-compose down || true
+    - docker rm -f $(docker ps -aq) || true
+
     # Validate Docker Compose configuration
     - echo "Validating Docker Compose configuration..."
     - docker-compose config || exit 1
@@ -46,7 +50,7 @@ test:
     # Start services
     - echo "Starting Docker Compose services..."
     - docker-compose up -d --build
-    
+
     # Ensure services are ready
     - echo "Waiting for services to initialize..."
     - sleep 15
@@ -54,7 +58,7 @@ test:
     # Check service status
     - echo "Checking running services..."
     - docker-compose ps
-    
+
     # Debug NGINX configuration
     - echo "Validating NGINX configuration..."
     - docker-compose exec nginx nginx -t || exit 1
@@ -81,6 +85,11 @@ test:
 deploy:
   stage: deploy
   script:
+    # Clean up before deployment
+    - echo "Cleaning up existing containers..."
+    - docker-compose down || true
+    - docker rm -f $(docker ps -aq) || true
+
     - echo "Deploying services..."
     - docker-compose up -d --build
     - docker-compose ps
