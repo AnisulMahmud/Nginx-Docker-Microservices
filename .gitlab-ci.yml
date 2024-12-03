@@ -17,13 +17,6 @@ before_script:
   - . /tmp/venv/bin/activate
   - pip install --upgrade pip
   - pip install flask requests unittest-xml-reporting
-  
-  # Debug: Check project structure and files
-  - echo "Listing project contents:"
-  - ls -R
-  - echo "Checking nginx configuration:"
-  - ls -l ./nginx
-  - cat ./nginx/nginx.conf || echo "nginx.conf not found"
 
 build:
   stage: build
@@ -46,25 +39,27 @@ test:
   script:
     - echo "Starting Docker services for testing..."
     
-    # Verify Docker Compose configuration
+    # Validate Docker Compose configuration
     - echo "Validating Docker Compose configuration..."
     - docker-compose config || exit 1
     
-    # Start services and wait for readiness
+    # Start services
     - echo "Starting Docker Compose services..."
     - docker-compose up -d --build
+    
+    # Ensure services are ready
     - echo "Waiting for services to initialize..."
-    - sleep 30  # Increased wait time to ensure services are ready
+    - sleep 15
     
     # Check service status
     - echo "Checking running services..."
     - docker-compose ps
     
-    # Validate NGINX configuration
+    # Debug NGINX configuration
     - echo "Validating NGINX configuration..."
     - docker-compose exec nginx nginx -t || exit 1
     
-    # Test NGINX connectivity to upstream services
+    # Test NGINX connectivity
     - echo "Testing upstream connectivity..."
     - docker-compose exec nginx curl -u anisul-mahmud:docker http://service1-1:8199/api/ || echo "Service1 API test failed"
     - docker-compose exec nginx curl -u anisul-mahmud:docker http://service2:5000 || echo "Service2 API test failed"
@@ -76,7 +71,7 @@ test:
     # Collect logs for debugging
     - echo "Collecting NGINX logs for debugging..."
     - docker-compose logs nginx
-    
+
     # Stop services after testing
     - echo "Stopping services..."
     - docker-compose down
