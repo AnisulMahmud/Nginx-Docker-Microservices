@@ -7,17 +7,20 @@ services:
   - name: docker:dind
     command: ["--tls=false", "--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]
 
-# variables:
-#   DOCKER_HOST: tcp://docker:2375
-#   DOCKER_TLS_CERTDIR: ""
-
 before_script:
   # Install required dependencies
-  - apk add --no-cache python3 py3-pip bash openjdk17
+  - apk add --no-cache python3 py3-pip bash openjdk17 docker-compose
   - python3 -m venv /tmp/venv
   - . /tmp/venv/bin/activate
   - pip install --upgrade pip
   - pip install flask requests unittest-xml-reporting
+  
+  # Debug: Check project structure and files
+  - echo "Listing project contents:"
+  - ls -R
+  - echo "Checking nginx configuration:"
+  - ls -l ./nginx
+  - cat ./nginx/nginx.conf || echo "nginx.conf not found"
 
 build:
   stage: build
@@ -29,6 +32,9 @@ build:
     - echo "Building nginx..."
     - docker build -t nginx:latest ./nginx
     - echo "Build phase completed!"
+    
+    # Verify Docker images
+    - docker images
   only:
     - project
 
@@ -36,19 +42,25 @@ test:
   stage: test
   script:
     - echo "Starting Docker services for testing..."
-    - docker-compose up -d
-    - echo "Waiting for services to initialize..."
-    - sleep 10
-
-    # # Test Java service (service1)
-    # - echo "Running Java tests for service1..."
-    # - javac -cp ./tests MainTest.java
-    # - java -cp ./tests org.junit.runner.JUnitCore MainTest
-
+    
+    # Additional debug information
+    - docker-compose config
+    
+    # Try to start services with more verbose output
+    - docker-compose up -d --build
+    
+    # Extended wait time and service status check
+    - sleep 15
+    - docker-compose ps
+    - docker-compose logs
+    
     # Test Python service (service2)
     - echo "Running Python tests for service2..."
     - python3 -m unittest discover -s tests -p "test_app.py"
-
+    
+    # Additional debugging for NGINX
+    - docker-compose exec -T nginx cat /etc/nginx/nginx.conf || echo "Failed to read NGINX config"
+    
     - echo "Stopping services after testing..."
     - docker-compose down
   only:
@@ -58,7 +70,8 @@ deploy:
   stage: deploy
   script:
     - echo "Deploying services..."
-    - docker-compose up -d
+    - docker-compose up -d --build
+    - docker-compose ps
     - echo "Deployment completed!"
   only:
     - project
