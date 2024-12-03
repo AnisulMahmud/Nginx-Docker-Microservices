@@ -38,6 +38,7 @@ test:
     - echo "Testing connectivity..."
     #- curl -u anisul-mahmud:docker http://localhost:8198/api/ || echo "NGINX Test failed"
     - python3 -m unittest discover -s tests -p "test_app.py"  # Run Python service tests
+    - curl http://service2:5000/ || echo "Service2 Test failed
     - echo "Stopping services..."
     - docker-compose down  # Stop all services
   only:
