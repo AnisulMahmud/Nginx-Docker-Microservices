@@ -4,17 +4,11 @@ stages:
   - deploy
 
 services:
-  - docker:dind
-
-variables:
-  DOCKER_HOST: tcp://docker:2375
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ""
+  - name: docker:dind
 
 before_script:
   # Install base dependencies
   - apk add --no-cache python3 py3-pip bash
-  # Create and activate a virtual environment
   - python3 -m venv /tmp/venv
   - . /tmp/venv/bin/activate
   - pip install --upgrade pip
@@ -23,31 +17,26 @@ before_script:
 build:
   stage: build
   script:
+    - echo "Testing Docker connectivity..."
+    - docker info || echo "Docker is not available!"
     - echo "Building service1..."
     - docker build -t service1:latest -f service1/Dockerfile service1/
     - echo "Building service2..."
     - docker build -t service2:latest -f service2/Dockerfile service2/
     - echo "Building Nginx..."
     - docker build -t nginx:latest -f nginx/Dockerfile nginx/
-    - echo "Building complete!"
+    - echo "Build phase completed!"
   only:
     - project
 
 test:
   stage: test
   script:
-    - echo "Setting up virtual environment for testing..."
-    - python3 -m venv /tmp/venv
-    - . /tmp/venv/bin/activate
-    - pip install requests unittest-xml-reporting
-
     - echo "Starting Docker services for testing..."
     - docker-compose up -d                    # Start all services
     - sleep 10                                # Wait for services to initialize
-
     - echo "Running Python tests..."
     - python3 -m unittest discover -s tests -p "test_*.py"
-
     - echo "Stopping services after testing..."
     - docker-compose down                     # Stop all services
   only:
@@ -58,6 +47,6 @@ deploy:
   script:
     - echo "Deploying services..."
     - docker-compose up -d                    # Start all services in detached mode
-    - echo "Services deployed successfully!"
+    - echo "Deployment phase completed!"
   only:
     - project
