@@ -1,11 +1,12 @@
 stages:
-  - build
   - test
   - deploy
 
 services:
   - name: docker:dind
     command: ["--tls=false", "--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]
+
+
 
 before_script:
   # Install base dependencies
@@ -15,29 +16,11 @@ before_script:
   - pip install --upgrade pip
   - pip install flask requests unittest-xml-reporting
 
-build:
-  stage: build
-  script:
-    - echo "Testing Docker connectivity..."
-    - docker info || echo "Docker is not available!"
-    - echo "Building service1..."
-    - docker build -t service1:latest -f service1/Dockerfile service1/
-    - echo "Building service2..."
-    - docker build -t service2:latest -f service2/Dockerfile service2/
-    - echo "Building Nginx..."
-    - docker build -t nginx:latest -f nginx/Dockerfile nginx/
-    - echo "Build phase completed!"
-  only:
-    - project
-
 test:
   stage: test
   script:
-    - echo "Checking Docker status..."
-    - docker info || echo "Docker is not running!"
-    - docker ps -a
-    - echo "Cleaning up old containers..."
-    - docker ps -aq | grep . && docker ps -aq | xargs docker rm -f || echo "No containers to clean up"
+    - echo "Cleaning up containers started by docker-compose..."
+    - docker-compose down --remove-orphans || echo "No containers to clean up"
     - echo "Starting Docker services for testing..."
     - docker-compose up -d                    # Start all services
     - sleep 10                                # Wait for services to initialize
@@ -52,7 +35,7 @@ deploy:
   stage: deploy
   script:
     - echo "Cleaning up old containers before deployment..."
-    - docker ps -aq | grep . && docker ps -aq | xargs docker rm -f || echo "No containers to clean up"
+    - docker-compose down --remove-orphans || echo "No containers to clean up"
     - echo "Deploying services..."
     - docker-compose up -d                    # Start all services in detached mode
     - echo "Deployment phase completed!"
