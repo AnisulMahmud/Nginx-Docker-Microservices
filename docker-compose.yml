@@ -46,7 +46,7 @@
 #       - ./nginx/index.html:/usr/share/nginx/html/index.html:ro
 #     networks:
 #       - app-network
-
+#
 # networks:
 #   app-network:
 #     driver: bridge

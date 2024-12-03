@@ -12,7 +12,7 @@ variables:
 
 before_script:
   # Install required dependencies
-  - apk add --no-cache python3 py3-pip bash docker-compose
+  - apk add --no-cache python3 py3-pip bash docker-compose curl
   - python3 -m venv /tmp/venv
   - . /tmp/venv/bin/activate
   - pip install --upgrade pip flask requests unittest-xml-reporting
@@ -30,7 +30,7 @@ test:
   stage: test
   script:
     - echo "Starting services..."
-    - docker-compose up -d  # Start all services
+    - docker-compose up -d  # Start all servicess
     - echo "Waiting for services to initialize..."
     - sleep 15  # Allow services to start up
     - echo "Validating NGINX configuration..."
