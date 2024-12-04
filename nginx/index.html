@@ -32,6 +32,9 @@
         <textarea id="stateLog" cols="50" rows="10" readonly></textarea>
     </div>
 
+    
+    
+
     <script>
         // Fetch combined data from Service1 and Service2
         async function sendRequest() {
@@ -83,6 +86,11 @@
                 if (response.ok) {
                     let message = await response.text();
                     alert(message);
+
+                    if (newState === 'INIT') {
+                // Refresh the page to trigger NGINX login prompt
+                window.location.reload();
+            }
                 } else {
                     alert('Failed to change state. HTTP-Error: ' + response.status);
                 }
