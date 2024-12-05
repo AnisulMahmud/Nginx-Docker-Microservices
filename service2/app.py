@@ -67,7 +67,7 @@ def manage_state():
         state_log.append(f"{datetime.utcnow().isoformat()}: {state}->SHUTDOWN")
         state = "SHUTDOWN"
         try:
-            # Stop all containers
+            # Stop all containerss
             result = subprocess.run(["docker-compose", "down"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             return f"State changed to SHUTDOWN. Services stopped: {result.stdout.decode('utf-8')}", 200
         except subprocess.CalledProcessError as e:
