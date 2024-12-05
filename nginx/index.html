@@ -76,29 +76,119 @@
         }
 
         // Change the system state (INIT, RUNNING, PAUSED, SHUTDOWN)
+        // async function changeState(newState) {
+        //     try {
+        //         let response = await fetch('/state', {
+        //             method: 'PUT',
+        //             headers: { 'Content-Type': 'text/plain' },
+        //             body: newState
+        //         });
+                
+        //         if (response.ok) {
+        //             let message = await response.text();
+        //             alert(message);
+                    
+        //             if (newState === 'SHUTDOWN') {
+        //         // Wait for a short duration to let the user see the message
+        //         setTimeout(() => {
+        //             window.location.reload();
+        //         }, 2000); // Reload after 2 seconds
+        //     } else if (newState === 'INIT') {
+        //         await fetch('/logout', { method: 'POST', credentials: 'include' });  // Optional endpoint to clear credentials
+        //         window.location.reload();  // Reload page to trigger login prompt// Refresh the page to trigger NGINX login prompt
+                
+        //     }
+        //         } else {
+        //             alert('Failed to change state. HTTP-Error: ' + response.status);
+        //         }
+        //     } catch (error) {
+        //         console.error('Error changing state:', error);
+        //         alert('Error changing state. Check console for details.');
+        //     }
+        // }
+
+        // async function changeState(newState) {
+        //     try {
+        //         // Make a PUT request to change the state
+        //         let response = await fetch('/state', {
+        //             method: 'PUT',
+        //             headers: { 'Content-Type': 'text/plain' },
+        //             body: newState
+        //         });
+
+        //         if (response.ok) {
+        //             let data = await response.json();
+        //             alert(data.message);
+
+        //             if (data.logout) {
+        //                 // Trigger logout by navigating to the /logout endpoint
+        //                 let logoutResponse = await fetch('/logout', {
+        //                     method: 'GET',
+        //                     credentials: 'include'
+        //                 });
+
+        //                 // Force reload regardless of logout response
+        //                 setTimeout(() => {
+        //                     window.location.reload();
+        //                 }, 100)
+        //             } else if (newState === 'SHUTDOWN') {
+        //                 // Wait for a short duration before reloading the page
+        //                 setTimeout(() => {
+        //                     window.location.reload();
+        //                 }, 2000); // Reload after 2 seconds
+        //             }
+        //         } else {
+        //             // Handle HTTP errors
+        //             let errorData = await response.json();
+        //             alert('Failed to change state. Message: ' + (errorData.message || 'Unknown error'));
+        //         }
+        //     } catch (error) {
+        //         // Handle unexpected errors
+        //         console.error('Error changing state:', error);
+        //         alert('Unexpected error while changing state. Check console for details.');
+        //     }
+        // }
+
         async function changeState(newState) {
             try {
+                // Make a PUT request to change the state
                 let response = await fetch('/state', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'text/plain' },
                     body: newState
                 });
+
                 if (response.ok) {
-                    let message = await response.text();
-                    alert(message);
+                    let data = await response.json();
+                    alert(data.message);
 
                     if (newState === 'INIT') {
-                // Refresh the page to trigger NGINX login prompt
-                window.location.reload();
-            }
+                        console.log("Logging out...");
+                        // Redirect to root or login page to trigger login prompt
+                        // window.location = '/logout';
+                        // document.execCommand('ClearAuthenticationCache');
+                        window.location.reload();
+                    } else if (newState === 'SHUTDOWN') {
+                        // Wait for a short duration before reloading the page
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000); // Reload after 2 seconds
+                    }
                 } else {
-                    alert('Failed to change state. HTTP-Error: ' + response.status);
+                    // Handle HTTP errors
+                    let errorData = await response.json();
+                    alert('Failed to change state. Message: ' + (errorData.message || 'Unknown error'));
                 }
             } catch (error) {
+                // Handle unexpected errors
                 console.error('Error changing state:', error);
-                alert('Error changing state. Check console for details.');
+                alert('Unexpected error while changing state. Check console for details.');
             }
         }
+
+
+
+
 
         // Fetch the current state of the system
         async function getState() {
