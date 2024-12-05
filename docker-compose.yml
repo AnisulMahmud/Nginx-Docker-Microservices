@@ -43,19 +43,14 @@ services:
       - app-network
 
   test:
-    image: python:3.12
-    working_dir: /app  # Ensure the working directory is set to the project root
-    volumes:
-      - .:/app  # Mount the entire project directory into the container
+    build:
+      context: ./tests
+      dockerfile: Dockerfile
     networks:
       - app-network
     depends_on:
-      - nginx  # Wait for nginx service to start
-    command: >
-      sh -c "
-      pip install requests unittest-xml-reporting &&
-      python3 -m unittest discover -s /app/tests -p 'test_*.py' || exit 1
-      "
+      - nginx
+    
 
 networks:
   app-network:
