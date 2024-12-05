@@ -43,18 +43,18 @@ services:
       - app-network
 
   test:
-    image: python:3.12  # Use Python to run tests
-    working_dir: /app
+    image: python:3.12
+    working_dir: /app  # Ensure the working directory is set to the project root
     volumes:
-      - .:/app  # Mount the project directory
+      - .:/app  # Mount the entire project directory into the container
     networks:
       - app-network
     depends_on:
-      - nginx
+      - nginx  # Wait for nginx service to start
     command: >
       sh -c "
       pip install requests unittest-xml-reporting &&
-      python3 -m unittest discover -s tests -p 'test_gateway.py'
+      python3 -m unittest discover -s /app/tests -p 'test_*.py' || exit 1
       "
 
 networks:

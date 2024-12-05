@@ -3,11 +3,11 @@ import requests
 
 
 class TestAPIGateway(unittest.TestCase):
-    # BASE_URL = "http://localhost:8198"
+    # BASE_URL = "http://localhost:8198" 
     BASE_URL = "http://nginx:80"
 
     def test_get_state(self):
-        """Test GET /state to retrieve current system state."""
+        """Test GET /state to retrieve current system states."""
         response = requests.get(f"{self.BASE_URL}/state", auth=("anisul-mahmud", "docker"))
         self.assertEqual(response.status_code, 200)
         self.assertIn(response.text, ["INIT", "RUNNING", "PAUSED", "SHUTDOWN"], "Unexpected state")
