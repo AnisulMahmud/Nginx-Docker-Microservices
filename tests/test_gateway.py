@@ -3,7 +3,8 @@ import requests
 
 
 class TestAPIGateway(unittest.TestCase):
-    BASE_URL = "http://localhost:8198"
+    # BASE_URL = "http://localhost:8198"
+    BASE_URL = "http://nginx:80"
 
     def test_get_state(self):
         """Test GET /state to retrieve current system state."""
