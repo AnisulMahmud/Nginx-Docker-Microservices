@@ -49,7 +49,8 @@ class TestAPIGateway(unittest.TestCase):
     #     """Test PUT /state to set system to SHUTDOWN."""
     #     response = requests.put(f"{self.BASE_URL}/state", data="SHUTDOWN", auth=("anisul-mahmud", "docker"))
     #     self.assertEqual(response.status_code, 200)
-    #     self.assertIn("State changed to SHUTDOWN", response.text, "Unexpected response for SHUTDOWN state")
+    #     self.assertIn("State changed to SHUTDOWN", response.json().get("message", ""), "Unexpected response for SHUTDOWN state")
+
 
 
 if __name__ == "__main__":

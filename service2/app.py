@@ -67,11 +67,48 @@ def manage_state():
         state_log.append(f"{datetime.utcnow().isoformat()}: {state}->SHUTDOWN")
         state = "SHUTDOWN"
         try:
-            # Stop all containerss
-            result = subprocess.run(["docker-compose", "down"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            return f"State changed to SHUTDOWN. Services stopped: {result.stdout.decode('utf-8')}", 200
+            # Get IDs of all running containers
+            result = subprocess.run(
+                ["docker", "ps", "-q"],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            container_ids = result.stdout.decode('utf-8').strip().split('\n')
+            
+            if container_ids and container_ids[0]:  # Check if there are running containers
+                try:
+                    # Stop all containers
+                    stop_result = subprocess.run(
+                        ["docker", "stop"] + container_ids,
+                        check=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    stopped_containers = stop_result.stdout.decode('utf-8').strip().split('\n')
+                    if not stopped_containers or stopped_containers[0] == '':
+                        # All containers have been stopped
+                        return jsonify({"message": "System has been shut down successfully. All containers have been stopped."}), 200
+                    else:
+                        return jsonify({"message": f"State changed to SHUTDOWN. Stopped containers: {', '.join(stopped_containers)}"}), 200
+                except subprocess.CalledProcessError as stop_error:
+                    stop_error_message = stop_error.stderr.decode('utf-8')
+                    print(f"Error stopping containers: {stop_error_message}")
+                    return jsonify({"error": f"Failed to stop containers: {stop_error_message}"}), 500
+            else:
+                # No running containers
+                return jsonify({"message": "State changed to SHUTDOWN. No running containers to stop."}), 200
         except subprocess.CalledProcessError as e:
-            return f"Error during SHUTDOWN: {e.stderr.decode('utf-8')}", 500
+            ps_error_message = e.stderr.decode('utf-8')
+            print(f"Error getting container IDs: {ps_error_message}")
+            return jsonify({"error": f"Failed to retrieve container IDs: {ps_error_message}"}), 500
+        except Exception as e:
+            print(f"Unexpected error during SHUTDOWN: {str(e)}")
+            return jsonify({"error": f"Unexpected error during SHUTDOWN: {str(e)}"}), 500
+        
+
+
+
 
 @app.route('/run-log', methods=['GET'])
 def run_log():
