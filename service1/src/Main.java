@@ -70,44 +70,95 @@ public class Main {
         }
     }
 
+
+
+
     private static String getService1Info() throws Exception {
-        StringBuilder info = new StringBuilder("{");
-        InetAddress ip = InetAddress.getLocalHost();
-        info.append("\"IpAddress\":\"").append(ip.getHostAddress()).append("\",");
-
-        ProcessBuilder processBuilder = new ProcessBuilder("ps", "ax");
-        Process process = processBuilder.start();
-        info.append("\"Processes\":[").append(outputFromProcess(process)).append("],");
-
-        File root = new File("/");
-        double freeGB = root.getFreeSpace() / (1024.0 * 1024.0 * 1024.0);
-        info.append("\"FreeSpaceGB\":\"").append(String.format("%.2f", freeGB)).append("\",");
-
-        info.append("\"LastBootTime\":\"").append(new Date().toString()).append("\"");
-        info.append("}");
-        return info.toString();
+        // First, check the state of Service 2
+        try {
+            URL stateUrl = new URL("http://service2:5000/state");
+            HttpURLConnection stateConnection = (HttpURLConnection) stateUrl.openConnection();
+            stateConnection.setRequestMethod("GET");
+    
+            // If state check fails or Service 2 is not in RUNNING state, return an error
+            if (stateConnection.getResponseCode() != 200) {
+                return "{\"message\":\"Service2 state is unavailable in info\"}";
+            }
+    
+            BufferedReader stateReader = new BufferedReader(new InputStreamReader(stateConnection.getInputStream()));
+            String stateResponse = stateReader.readLine();
+            stateReader.close();
+    
+            // Check if the state is not RUNNING
+            if (!stateResponse.contains("\"RUNNING\"")) {
+                return "{\"message\":\"Service is not in RUNNING state\"}";
+            }
+    
+            // If state is RUNNING, proceed with gathering Service 1 info
+            StringBuilder info = new StringBuilder("{");
+            InetAddress ip = InetAddress.getLocalHost();
+            info.append("\"IpAddress\":\"").append(ip.getHostAddress()).append("\",");
+    
+            ProcessBuilder processBuilder = new ProcessBuilder("ps", "ax");
+            Process process = processBuilder.start();
+            info.append("\"Processes\":[").append(outputFromProcess(process)).append("],");
+    
+            File root = new File("/");
+            double freeGB = root.getFreeSpace() / (1024.0 * 1024.0 * 1024.0);
+            info.append("\"FreeSpaceGB\":\"").append(String.format("%.2f", freeGB)).append("\",");
+            info.append("\"LastBootTime\":\"").append(new Date().toString()).append("\"");
+            info.append("}");
+            return info.toString();
+    
+        } catch (Exception e) {
+            // Handle any unexpected errors during state check or info gathering
+            return "{\"message\":\"Error checking service state: " + 
+                   e.getMessage().replace("\"", "'") + "\"}";
+        }
     }
 
     private static String getService2Info() throws Exception {
+        // First, check the state of Service 2
+        URL stateUrl = new URL(SERVICE2_REQUEST_URL);
+        HttpURLConnection stateConnection = (HttpURLConnection) stateUrl.openConnection();
+        stateConnection.setRequestMethod("GET");
+    
+        // If state check fails, return an error message
+        if (stateConnection.getResponseCode() != 200) {
+            return "{\"message\":\"Service is not in RUNNING state\"}";
+        }
+    
+        // Read the state response
+        BufferedReader stateReader = new BufferedReader(new InputStreamReader(stateConnection.getInputStream()));
+        String stateResponse = stateReader.readLine();
+        stateReader.close();
+    
+        // Check if the state is not RUNNING
+        if (!stateResponse.contains("\"RUNNING\"")) {
+            return "{\"message\":\"Service2 is not in RUNNING state\"}";
+        }
+    
+        // If state is RUNNING, proceed to get Service 2 info
         URL service2Url = new URL(SERVICE2_REQUEST_URL);
         HttpURLConnection connection = (HttpURLConnection) service2Url.openConnection();
         connection.setRequestMethod("GET");
-
+    
         if (connection.getResponseCode() != 200) {
-            return "{\"message\":\"Service2 is not in RUNNING state or unavailable\"}";
+            return "{\"message\":\"Service2 is not accessible\"}";
         }
-
+    
         BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
         StringBuilder response = new StringBuilder();
         String inputLine;
-
         while ((inputLine = input.readLine()) != null) {
             response.append(inputLine);
         }
         input.close();
-
+    
         return response.toString();
     }
+
+ 
 
     private static String outputFromProcess(Process process) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));

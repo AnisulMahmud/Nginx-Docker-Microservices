@@ -1,7 +1,6 @@
 import unittest
 import requests
 
-
 class TestAPIGateway(unittest.TestCase):
     # BASE_URL = "http://localhost:8198" 
     BASE_URL = "http://nginx:80"
@@ -10,7 +9,8 @@ class TestAPIGateway(unittest.TestCase):
         """Test GET /state to retrieve current system states."""
         response = requests.get(f"{self.BASE_URL}/state", auth=("anisul-mahmud", "docker"))
         self.assertEqual(response.status_code, 200)
-        self.assertIn(response.text, ["INIT", "RUNNING", "PAUSED", "SHUTDOWN"], "Unexpected state")
+        state = response.json().get('state')  # Get 'state' from the JSON response
+        self.assertIn(state, ["INIT", "RUNNING", "PAUSED", "SHUTDOWN"], "Unexpected state")
 
     def test_put_state_running(self):
         """Test PUT /state to set system to RUNNING."""
@@ -24,8 +24,9 @@ class TestAPIGateway(unittest.TestCase):
     def test_put_state_init(self):
         """Test PUT /state to reset system to INIT."""
         response = requests.put(f"{self.BASE_URL}/state", data="INIT", auth=("anisul-mahmud", "docker"))
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("State changed to INIT", response.text, "Unexpected response for INIT state")
+        self.assertEqual(response.status_code, 401)  # Expecting 401 because of re-authentication
+        self.assertIn("Please re-authenticate", response.text, "Expected re-authenticate message")
+
 
     def test_get_run_log(self):
         """Test GET /run-log to retrieve the system's state transitions."""
@@ -44,14 +45,6 @@ class TestAPIGateway(unittest.TestCase):
         else:
             self.assertEqual(response.status_code, 200)
             self.assertIn("IP Address", response.json(), "Unexpected response format for /request")
-
-    # def test_put_state_shutdown(self):
-    #     """Test PUT /state to set system to SHUTDOWN."""
-    #     response = requests.put(f"{self.BASE_URL}/state", data="SHUTDOWN", auth=("anisul-mahmud", "docker"))
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertIn("State changed to SHUTDOWN", response.json().get("message", ""), "Unexpected response for SHUTDOWN state")
-
-
 
 if __name__ == "__main__":
     unittest.main()

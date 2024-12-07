@@ -20,8 +20,7 @@
     <div>
         <h2>Requests</h2>
         <button id="requestButton" onclick="sendRequest()">REQUEST</button>
-        <button id="stopButton" onclick="stopServices()">STOP</button>
-        <textarea id="response" cols="50" rows="10" readonly></textarea>
+        <textarea id="response" cols="50" rows="15" readonly></textarea>
     </div>
     
     <!-- System Status Display -->
@@ -30,6 +29,12 @@
         <button id="getStateButton" onclick="getState()">Get Current State</button>
         <button id="getLogButton" onclick="getLog()">Get Run Log</button>
         <textarea id="stateLog" cols="50" rows="10" readonly></textarea>
+    </div>
+
+    <div>
+        <h2>Service Metrics</h2>
+        <button id="getMetricsButton" onclick="getMetrics()">Get Service Metrics</button>
+        <textarea id="metrics" cols="50" rows="10" readonly></textarea>
     </div>
 
     
@@ -44,7 +49,7 @@
                     let data = await response.json();
                     document.getElementById('response').value = JSON.stringify(data, null, 2);
 
-                    // Optionally display the upstream server used (if header is provided)
+                
                     let upstreamServer = response.headers.get('X-Upstream-Server');
                     if (upstreamServer) {
                         console.log('Request handled by upstream server:', upstreamServer);
@@ -58,97 +63,8 @@
             }
         }
 
-        // Stop all services via Service1
-        function stopServices() {
-            fetch('/api/stop', { method: 'POST' })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to stop services. Status: ' + response.status);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    alert(data.message);
-                })
-                .catch(error => {
-                    console.error('Error stopping services:', error.message);
-                });
-        }
 
-        // Change the system state (INIT, RUNNING, PAUSED, SHUTDOWN)
-        // async function changeState(newState) {
-        //     try {
-        //         let response = await fetch('/state', {
-        //             method: 'PUT',
-        //             headers: { 'Content-Type': 'text/plain' },
-        //             body: newState
-        //         });
-                
-        //         if (response.ok) {
-        //             let message = await response.text();
-        //             alert(message);
-                    
-        //             if (newState === 'SHUTDOWN') {
-        //         // Wait for a short duration to let the user see the message
-        //         setTimeout(() => {
-        //             window.location.reload();
-        //         }, 2000); // Reload after 2 seconds
-        //     } else if (newState === 'INIT') {
-        //         await fetch('/logout', { method: 'POST', credentials: 'include' });  // Optional endpoint to clear credentials
-        //         window.location.reload();  // Reload page to trigger login prompt// Refresh the page to trigger NGINX login prompt
-                
-        //     }
-        //         } else {
-        //             alert('Failed to change state. HTTP-Error: ' + response.status);
-        //         }
-        //     } catch (error) {
-        //         console.error('Error changing state:', error);
-        //         alert('Error changing state. Check console for details.');
-        //     }
-        // }
-
-        // async function changeState(newState) {
-        //     try {
-        //         // Make a PUT request to change the state
-        //         let response = await fetch('/state', {
-        //             method: 'PUT',
-        //             headers: { 'Content-Type': 'text/plain' },
-        //             body: newState
-        //         });
-
-        //         if (response.ok) {
-        //             let data = await response.json();
-        //             alert(data.message);
-
-        //             if (data.logout) {
-        //                 // Trigger logout by navigating to the /logout endpoint
-        //                 let logoutResponse = await fetch('/logout', {
-        //                     method: 'GET',
-        //                     credentials: 'include'
-        //                 });
-
-        //                 // Force reload regardless of logout response
-        //                 setTimeout(() => {
-        //                     window.location.reload();
-        //                 }, 100)
-        //             } else if (newState === 'SHUTDOWN') {
-        //                 // Wait for a short duration before reloading the page
-        //                 setTimeout(() => {
-        //                     window.location.reload();
-        //                 }, 2000); // Reload after 2 seconds
-        //             }
-        //         } else {
-        //             // Handle HTTP errors
-        //             let errorData = await response.json();
-        //             alert('Failed to change state. Message: ' + (errorData.message || 'Unknown error'));
-        //         }
-        //     } catch (error) {
-        //         // Handle unexpected errors
-        //         console.error('Error changing state:', error);
-        //         alert('Unexpected error while changing state. Check console for details.');
-        //     }
-        // }
-
+       
         async function changeState(newState) {
             try {
                 // Make a PUT request to change the state
@@ -164,9 +80,7 @@
 
                     if (newState === 'INIT') {
                         console.log("Logging out...");
-                        // Redirect to root or login page to trigger login prompt
-                        // window.location = '/logout';
-                        // document.execCommand('ClearAuthenticationCache');
+                        //reloading the page
                         window.location.reload();
                     } else if (newState === 'SHUTDOWN') {
                         // Wait for a short duration before reloading the page
@@ -221,6 +135,46 @@
                 alert('Error fetching run log. Check console for details.');
             }
         }
+
+
+        async function getMetrics() {
+            try {
+                // Consider adding a timeout or more specific error handling
+                const response = await fetch('/metrics', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const metrics = await response.json();
+                document.getElementById('metrics').textContent = JSON.stringify(metrics, null, 2);
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+                alert('Failed to fetch metrics: ' + error.message);
+            }
+        }
+
+
+        // async function getMetrics() {
+        //     try {
+        //         let response = await fetch('/metrics');
+        //         if (response.ok) {
+        //             let metrics = await response.json();
+        //             document.getElementById('metrics').value = JSON.stringify(metrics, null, 2);
+        //         } else {
+        //             alert('Failed to fetch metrics. HTTP-Error: ' + response.status);
+        //         }
+        //     } catch (error) {
+        //         console.error('Error fetching metrics:', error);
+        //         alert('Error fetching metrics. Check console for details.');
+        //     }
+        // }
+
     </script>
 </body>
 </html>
