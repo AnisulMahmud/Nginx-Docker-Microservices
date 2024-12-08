@@ -85,17 +85,17 @@ test:
 staging_deploy:
   stage: deploy
   script:
-    - echo "Deploying to staging..."
-    - docker-compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+    - echo "Deploying to staging (project branch)..."
+    - docker-compose up -d
     - docker-compose ps
   only:
-    - staging
+    - project
 
 production_deploy:
   stage: deploy
   script:
-    - echo "Deploying to production..."
-    - docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+    - echo "Deploying to production (main branch)..."
+    - docker-compose up -d
     - docker-compose ps
   only:
     - main
