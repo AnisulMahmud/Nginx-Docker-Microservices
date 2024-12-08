@@ -3,6 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <title>Service Management</title>
+    <style>
+        /* General  */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        /* Header  */
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        /* Section */
+        h2 {
+            color: #555;
+            margin-bottom: 10px;
+            text-decoration: underline;
+        }
+
+        /* Buttons */
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:active {
+            background-color: #003f7f;
+        }
+
+        /* Disabled Button */
+        button:disabled {
+            background-color: #d3d3d3;
+            cursor: not-allowed;
+        }
+
+        /* Containers */
+        div {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Textareas */
+        textarea {
+            width: 100%;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            background-color: #f7f7f7;
+            resize: none;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        
+        textarea:focus {
+            outline: none;
+            border-color: #007BFF;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        /* Spacing */
+        div h2 + button,
+        div h2 + textarea {
+            margin-top: 15px;
+        }
+    </style>
+    
 </head>
 <body>
     <h1> Service Management</h1>
@@ -67,7 +154,7 @@
        
         async function changeState(newState) {
             try {
-                // Make a PUT request to change the state
+                // PUT request to change the state
                 let response = await fetch('/state', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'text/plain' },
@@ -80,10 +167,9 @@
 
                     if (newState === 'INIT') {
                         console.log("Logging out...");
-                        //reloading the page
-                        window.location.reload();
+                        window.location.reload();  //reloading the page
                     } else if (newState === 'SHUTDOWN') {
-                        // Wait for a short duration before reloading the page
+                        console.log("Shutting down...");
                         setTimeout(() => {
                             window.location.reload();
                         }, 2000); // Reload after 2 seconds
@@ -136,10 +222,10 @@
             }
         }
 
-
+        // Fetch the service metrics
         async function getMetrics() {
             try {
-                // Consider adding a timeout or more specific error handling
+                
                 const response = await fetch('/metrics', {
                     method: 'GET',
                     headers: {
@@ -160,20 +246,7 @@
         }
 
 
-        // async function getMetrics() {
-        //     try {
-        //         let response = await fetch('/metrics');
-        //         if (response.ok) {
-        //             let metrics = await response.json();
-        //             document.getElementById('metrics').value = JSON.stringify(metrics, null, 2);
-        //         } else {
-        //             alert('Failed to fetch metrics. HTTP-Error: ' + response.status);
-        //         }
-        //     } catch (error) {
-        //         console.error('Error fetching metrics:', error);
-        //         alert('Error fetching metrics. Check console for details.');
-        //     }
-        // }
+    
 
     </script>
 </body>

@@ -3,28 +3,46 @@ from flask import Flask, jsonify, request
 from threading import Lock
 import socket
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 from threading import Thread
+from functools import wraps
 
 app = Flask(__name__)
 
 # Global variables
 state = "INIT"
 state_log = []
-start_time = datetime.utcnow()  # Track service start time
+start_time = datetime.now(timezone.utc)  # Track service start time
 
 
 request_count_lock = Lock()
 request_count = 0
 
+# Decorator to ensure thread-safe request counting
+def count_request(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        global request_count
+        with request_count_lock:
+            request_count += 1
+            print(f"Request count incremented to {request_count}")
+        return func(*args, **kwargs)
+    return wrapper
+
+
+
+# Service endpoints and functions
+
+# Service information endpoint -> Endpoint to provide Service2 information when the state is RUNNING.
+
 @app.route('/', methods=['GET'])
 def service2_info():
     """Provide service information if the state is RUNNING."""
-
+    # Check if the service is in RUNNING state
     if state != "RUNNING":
         return jsonify({"message": "Service2 is not in RUNNING state", "state": state}), 403
-
+    
     try:
         info = {
             "IP Address": socket.gethostbyname(socket.gethostname()),
@@ -41,6 +59,7 @@ def service2_info():
         return jsonify({"error": str(e)}), 500
 
 
+# State management endpoints -> manage the system state and provide the run log
 @app.route('/state', methods=['GET', 'PUT'])
 def manage_state():
     """Get or update the system state."""
@@ -56,31 +75,34 @@ def manage_state():
 
     if new_state == state:
         return jsonify({"message": "No change in state"}), 200
-
-
+    
+    # Handle INIT state
     if new_state == "INIT":
-        state_log.append(f"{datetime.utcnow().isoformat()}: {state}->INIT")
+        state_log.append(f"{datetime.now(timezone.utc).isoformat()}: {state}->INIT")
         state = "INIT"
         # Return a 401 Unauthorized response to force the user to re-authenticate
         response = jsonify({"message": "State changed to INIT. Please re-authenticate."})
         response.headers['WWW-Authenticate'] = 'Basic realm="Restricted Access"'
         response.status_code = 401
         return response
-
+    
+    # Handle RUNNING state
     if new_state == "RUNNING":
         if request.headers.get('Authorization') is None:
             return jsonify({"error": "Login required to transition to RUNNING"}), 403
-        state_log.append(f"{datetime.utcnow().isoformat()}: {state}->RUNNING")
+        state_log.append(f"{datetime.now(timezone.utc).isoformat()}: {state}->RUNNING")
         state = "RUNNING"
         return jsonify({"message": "State changed to RUNNING"}), 200
 
+    # Handle PAUSED state
     if new_state == "PAUSED":
-        state_log.append(f"{datetime.utcnow().isoformat()}: {state}->PAUSED")
+        state_log.append(f"{datetime.now(timezone.utc).isoformat()}: {state}->PAUSED")
         state = "PAUSED"
         return jsonify({"message": "State changed to PAUSED"}), 200
-
+    
+    # Handle SHUTDOWN state
     if new_state == "SHUTDOWN":
-        state_log.append(f"{datetime.utcnow().isoformat()}: {state}->SHUTDOWN")
+        state_log.append(f"{datetime.now(timezone.utc).isoformat()}: {state}->SHUTDOWN")
         state = "SHUTDOWN"
 
         # Start container shutdown 
@@ -130,18 +152,24 @@ def check_state():
     """Provide a simple endpoint to check the current state."""
     return jsonify({"state": state}), 200
 
+# Request endpoint -> handle system requests and provide useful system info
+
 @app.route('/request', methods=['GET'])
+@count_request
 def handle_request():
     """Handle system request if in RUNNING state."""
-    
+    print(f"Handle request endpoint called: {request.url}")
 
+
+    if request.path == '/favicon.ico':
+        print("Ignoring favicon.ico request")
+        return "", 204
+    
+    # Check if the service is in RUNNING state
     if state != "RUNNING":
         return jsonify({"message": "Service2 is not in RUNNING state", "state": state}), 403
     print(f"/request endpoint called while state is RUNNING.")
     try:
-        global request_count
-        with request_count_lock:
-            request_count += 1
         info = {
             "IP Address": socket.gethostbyname(socket.gethostname()),
             "Processes": subprocess.check_output(['ps', '-eo', 'pid,user,time,comm']).decode('utf-8').strip().split('\n'),
@@ -155,11 +183,12 @@ def handle_request():
         return jsonify(info), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+# Metrics endpoint -> retrieve useful info about the service uptime, request count, and state  
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
-    print("Metrics endpoint called")  # Add this for debugging
-    uptime = datetime.utcnow() - start_time
+    print("Metrics endpoint called")  
+    uptime = datetime.now(timezone.utc)- start_time
     metrics = {
         "Service Start Time": start_time.strftime('%Y-%m-%d %H:%M:%S'),
         "Uptime (seconds)": str(uptime.total_seconds()),

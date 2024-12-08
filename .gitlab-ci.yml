@@ -18,6 +18,7 @@ build:
     - docker images  # Display built images
   only:
     - project
+    - main
 
 test:
   stage: test
@@ -27,6 +28,7 @@ test:
     - docker-compose down  # Clean up after testss
   only:
     - project
+    - main
 
 deploy:
   stage: deploy
@@ -36,3 +38,4 @@ deploy:
     - docker-compose ps  # Show running containers
   only:
     - project
+    - main

@@ -6,6 +6,7 @@ import java.util.stream.*;
 public class Main {
     private static final String SERVICE2_REQUEST_URL = "http://service2:5000/request";
 
+
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(8199)) {
             System.err.println("Service1 is running on port 8199");
@@ -25,6 +26,7 @@ public class Main {
         }
     }
 
+    // Handles incoming client requests and routes them based on the request 
     private static void handleRequest(Socket clientSocket) throws Exception {
         try (OutputStream output = clientSocket.getOutputStream();
              PrintWriter writer = new PrintWriter(output, true);
@@ -57,6 +59,8 @@ public class Main {
         }
     }
 
+
+    // Stops the Docker Compose services and shuts down the application
     private static void stopDockerCompose() {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", "docker-compose down");
@@ -71,8 +75,7 @@ public class Main {
     }
 
 
-
-
+    // Retrieves information about Service 1
     private static String getService1Info() throws Exception {
         // First, check the state of Service 2
         try {
@@ -80,7 +83,7 @@ public class Main {
             HttpURLConnection stateConnection = (HttpURLConnection) stateUrl.openConnection();
             stateConnection.setRequestMethod("GET");
     
-            // If state check fails or Service 2 is not in RUNNING state, return an error
+            // Service 2 is not in RUNNING state, return an error
             if (stateConnection.getResponseCode() != 200) {
                 return "{\"message\":\"Service2 state is unavailable in info\"}";
             }
@@ -94,7 +97,7 @@ public class Main {
                 return "{\"message\":\"Service is not in RUNNING state\"}";
             }
     
-            // If state is RUNNING, proceed with gathering Service 1 info
+            // If state is RUNNING, get Service 1 info
             StringBuilder info = new StringBuilder("{");
             InetAddress ip = InetAddress.getLocalHost();
             info.append("\"IpAddress\":\"").append(ip.getHostAddress()).append("\",");
@@ -111,12 +114,13 @@ public class Main {
             return info.toString();
     
         } catch (Exception e) {
-            // Handle any unexpected errors during state check or info gathering
+            // Handle any unexpected errors
             return "{\"message\":\"Error checking service state: " + 
                    e.getMessage().replace("\"", "'") + "\"}";
         }
     }
 
+    // Retrieves information about Service 2
     private static String getService2Info() throws Exception {
         // First, check the state of Service 2
         URL stateUrl = new URL(SERVICE2_REQUEST_URL);
@@ -160,6 +164,7 @@ public class Main {
 
  
 
+    //Collects and formats the output
     private static String outputFromProcess(Process process) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         return reader.lines()

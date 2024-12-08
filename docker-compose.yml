@@ -1,5 +1,7 @@
+
 version: '3.8'
 
+# First instance of Service1
 services:
   service1-1:
     build:
@@ -7,18 +9,21 @@ services:
     networks:
       - app-network
 
+# Second instance of Service1
   service1-2:
     build:
       context: ./service1
     networks:
       - app-network
 
+# Third instance of Service1
   service1-3:
     build:
       context: ./service1
     networks:
       - app-network
 
+# Service2 instance
   service2:
     build:
       context: ./service2
@@ -29,21 +34,23 @@ services:
     networks:
       - app-network
 
+ # Nginx: Reverse proxy and traffic router
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile  
     ports:
-      - "8198:80"
+      - "8198:8198" # Port or browser traffic
+      - "8197:8197" # Port for REST API tests
     depends_on:
       - service1-1
       - service1-2
       - service1-3
       - service2
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile  
     networks:
       - app-network
 
+# Test service: For running tests on the application
   test:
     build:
       context: ./tests
@@ -52,7 +59,6 @@ services:
       - app-network
     depends_on:
       - nginx
-    
 
 networks:
   app-network:

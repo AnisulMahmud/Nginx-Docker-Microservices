@@ -2,9 +2,11 @@ import unittest
 import requests
 
 class TestAPIGateway(unittest.TestCase):
-    # BASE_URL = "http://localhost:8198" 
-    BASE_URL = "http://nginx:80"
 
+    BASE_URL = "http://nginx:8197"
+
+    # Test cases for the API Gateway
+    
     def test_get_state(self):
         """Test GET /state to retrieve current system states."""
         response = requests.get(f"{self.BASE_URL}/state", auth=("anisul-mahmud", "docker"))
