@@ -1,3 +1,45 @@
+# stages:
+#   - build
+#   - test
+#   - deploy
+
+# services:
+#   - name: docker:dind
+
+# variables:
+#   DOCKER_DRIVER: overlay2
+#   DOCKER_TLS_CERTDIR: ""
+
+# build:
+#   stage: build
+#   script:
+#     - echo "Building all services..."
+#     - docker-compose build  # Build all services
+#     - docker images  # Display built images
+#   only:
+#     - project
+#     - main
+
+# test:
+#   stage: test
+#   script:
+#     - echo "Running tests ..."
+#     - docker-compose up --build test  # Build and run the test service
+#     - docker-compose down  # Clean up after testss
+#   only:
+#     - project
+#     - main
+
+# deploy:
+#   stage: deploy
+#   script:
+#     - echo "Deploying services..."
+#     - docker-compose up -d  # Start all services in detached mode
+#     - docker-compose ps  # Show running containers
+#   only:
+#     - project
+#     - main
+
 stages:
   - build
   - test
@@ -14,8 +56,8 @@ build:
   stage: build
   script:
     - echo "Building all services..."
-    - docker-compose build  # Build all services
-    - docker images  # Display built images
+    - docker-compose build
+    - docker images
   only:
     - project
     - main
@@ -23,19 +65,44 @@ build:
 test:
   stage: test
   script:
-    - echo "Running tests ..."
-    - docker-compose up --build test  # Build and run the test service
-    - docker-compose down  # Clean up after testss
+    - echo "Running static analysis..."
+    - pip install flake8
+    - flake8 tests/ service2/app.py
+    - wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.0/checkstyle-10.0-all.jar -O checkstyle.jar
+    - java -jar checkstyle.jar -c /google_checks.xml service1/src/Main.java
+    - echo "Running tests..."
+    - docker-compose up --build test
+    - curl -f http://localhost:8197/metrics || (echo "Metrics endpoint not accessible!" && exit 1)
+    - docker-compose logs > test-logs.txt
+    - docker-compose down
+  artifacts:
+    paths:
+      - test-logs.txt
   only:
     - project
     - main
 
-deploy:
+staging_deploy:
   stage: deploy
   script:
-    - echo "Deploying services..."
-    - docker-compose up -d  # Start all services in detached mode
-    - docker-compose ps  # Show running containers
+    - echo "Deploying to staging..."
+    - docker-compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+    - docker-compose ps
   only:
-    - project
+    - staging
+
+production_deploy:
+  stage: deploy
+  script:
+    - echo "Deploying to production..."
+    - docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+    - docker-compose ps
+  only:
     - main
+
+notifications:
+  email:
+    recipients:
+      - anisul.mahmud@tuni.fi
+    on_success: always
+    on_failure: always
