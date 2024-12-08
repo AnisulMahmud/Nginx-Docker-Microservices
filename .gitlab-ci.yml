@@ -100,9 +100,3 @@ production_deploy:
   only:
     - main
 
-notifications:
-  email:
-    recipients:
-      - anisul.mahmud@tuni.fi
-    on_success: always
-    on_failure: always
