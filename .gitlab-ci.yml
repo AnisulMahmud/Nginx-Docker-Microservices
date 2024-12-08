@@ -65,8 +65,8 @@ build:
 test:
   stage: test
   script:
-    - echo "Running static analysis..."
-
+    - echo "Installing curl..."
+    - apt-get update && apt-get install -y curl
     - echo "Running tests..."
     - docker-compose up --build test
     - curl -f http://localhost:8197/metrics || (echo "Metrics endpoint not accessible!" && exit 1)
