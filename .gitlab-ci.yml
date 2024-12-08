@@ -39,3 +39,4 @@ deploy:
   only:
     - project
     - main
+
