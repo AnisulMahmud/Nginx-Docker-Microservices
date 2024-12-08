@@ -40,13 +40,17 @@
 #     - project
 #     - main
 
+
+
 stages:
   - build
   - test
   - deploy
 
+# Define Docker-in-Docker service for building and running containers
 services:
   - name: docker:dind
+
 
 variables:
   DOCKER_DRIVER: overlay2
@@ -59,41 +63,37 @@ build:
     - docker-compose build
     - docker images
   only:
-    - project
+    - branches
     - main
 
 test:
   stage: test
-  script:
-    - echo "Installing curl..."
+  image: python:3.12-slim-buster  # Base image for Python and package installations
+  before_script:
+    - echo "Preparing the environment..."
     - apt-get update && apt-get install -y curl
+  script:
     - echo "Running tests..."
     - docker-compose up --build test
+    - echo "Checking metrics endpoint..."
     - curl -f http://localhost:8197/metrics || (echo "Metrics endpoint not accessible!" && exit 1)
+    - echo "Collecting logs..."
     - docker-compose logs > test-logs.txt
     - docker-compose down
   artifacts:
     paths:
       - test-logs.txt
+    when: always  # Ensure logs are collected even if the job fails
+  only:
+    - branches
+    - main
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying services..."
+    - docker-compose up -d  # Start all services in detached mode
+    - docker-compose ps  # Show running containers
   only:
     - project
     - main
-
-staging_deploy:
-  stage: deploy
-  script:
-    - echo "Deploying to staging (project branch)..."
-    - docker-compose up -d
-    - docker-compose ps
-  only:
-    - project
-
-production_deploy:
-  stage: deploy
-  script:
-    - echo "Deploying to production (main branch)..."
-    - docker-compose up -d
-    - docker-compose ps
-  only:
-    - main
-
