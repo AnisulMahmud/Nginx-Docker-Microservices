@@ -1,56 +1,10 @@
-# stages:
-#   - build
-#   - test
-#   - deploy
-
-# services:
-#   - name: docker:dind
-
-# variables:
-#   DOCKER_DRIVER: overlay2
-#   DOCKER_TLS_CERTDIR: ""
-
-# build:
-#   stage: build
-#   script:
-#     - echo "Building all services..."
-#     - docker-compose build  # Build all services
-#     - docker images  # Display built images
-#   only:
-#     - project
-#     - main
-
-# test:
-#   stage: test
-#   script:
-#     - echo "Running tests ..."
-#     - docker-compose up --build test  # Build and run the test service
-#     - docker-compose down  # Clean up after testss
-#   only:
-#     - project
-#     - main
-
-# deploy:
-#   stage: deploy
-#   script:
-#     - echo "Deploying services..."
-#     - docker-compose up -d  # Start all services in detached mode
-#     - docker-compose ps  # Show running containers
-#   only:
-#     - project
-#     - main
-
-
-
 stages:
   - build
   - test
   - deploy
 
-# Define Docker-in-Docker service for building and running containers
 services:
   - name: docker:dind
-
 
 variables:
   DOCKER_DRIVER: overlay2
@@ -60,32 +14,20 @@ build:
   stage: build
   script:
     - echo "Building all services..."
-    - docker-compose build
-    - docker images
+    - docker-compose build  # Build all services
+    - docker images  # Display built images
   only:
-    - branches
+    - project
     - main
 
 test:
   stage: test
-  image: python:3.12-slim-buster  # Base image for Python and package installations
-  before_script:
-    - echo "Preparing the environment..."
-    - apt-get update && apt-get install -y curl
   script:
-    - echo "Running tests..."
-    - docker-compose up --build test
-    - echo "Checking metrics endpoint..."
-    - curl -f http://localhost:8197/metrics || (echo "Metrics endpoint not accessible!" && exit 1)
-    - echo "Collecting logs..."
-    - docker-compose logs > test-logs.txt
-    - docker-compose down
-  artifacts:
-    paths:
-      - test-logs.txt
-    when: always  # Ensure logs are collected even if the job fails
+    - echo "Running tests ..."
+    - docker-compose up --build test  # Build and run the test service
+    - docker-compose down  # Clean up after testss
   only:
-    - branches
+    - project
     - main
 
 deploy:
@@ -97,3 +39,4 @@ deploy:
   only:
     - project
     - main
+
