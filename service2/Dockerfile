@@ -1,22 +1,25 @@
-FROM python:3.9-slim
 
+
+FROM python:3.9-slim
 
 # Set the working directory
 WORKDIR /app
 
+# Install procps and Docker CLI
+RUN apt-get update && apt-get install -y \
+    procps \
+    curl && \
+    curl -fsSL https://get.docker.com | sh && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install procps to get the ps command
-RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
-
-# Copy the current directory contents intot the container 
+# Copy the application code into the container
 COPY app.py /app/app.py
 
-# Install any needed packages
+# Install Python dependencies
 RUN pip install --no-cache-dir flask
 
-
-# Expose the port of my application runs on
+# Expose the application port
 EXPOSE 5000
 
-# Specify the entry point to run the compiled java class
-ENTRYPOINT [ "python", "app.py" ]
+# Specify the entry point to run the application
+ENTRYPOINT ["python", "app.py"]

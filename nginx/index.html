@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Service Management</title>
+    <style>
+        /* General  */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        /* Header  */
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        /* Section */
+        h2 {
+            color: #555;
+            margin-bottom: 10px;
+            text-decoration: underline;
+        }
+
+        /* Buttons */
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:active {
+            background-color: #003f7f;
+        }
+
+        /* Disabled Button */
+        button:disabled {
+            background-color: #d3d3d3;
+            cursor: not-allowed;
+        }
+
+        /* Containers */
+        div {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Textareas */
+        textarea {
+            width: 100%;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            background-color: #f7f7f7;
+            resize: none;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        
+        textarea:focus {
+            outline: none;
+            border-color: #007BFF;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        /* Spacing */
+        div h2 + button,
+        div h2 + textarea {
+            margin-top: 15px;
+        }
+    </style>
+    
+</head>
+<body>
+    <h1> Service Management</h1>
+    
+    <!-- System Control Buttons -->
+    <div>
+        <h2>System Control</h2>
+        <button id="initButton" onclick="changeState('INIT')">INIT</button>
+        <button id="runningButton" onclick="changeState('RUNNING')">RUNNING</button>
+        <button id="pausedButton" onclick="changeState('PAUSED')">PAUSED</button>
+        <button id="shutdownButton" onclick="changeState('SHUTDOWN')">SHUTDOWN</button>
+    </div>
+    
+    <!-- Request Buttons and Response Area -->
+    <div>
+        <h2>Requests</h2>
+        <button id="requestButton" onclick="sendRequest()">REQUEST</button>
+        <textarea id="response" cols="50" rows="15" readonly></textarea>
+    </div>
+    
+    <!-- System Status Display -->
+    <div>
+        <h2>System Status</h2>
+        <button id="getStateButton" onclick="getState()">Get Current State</button>
+        <button id="getLogButton" onclick="getLog()">Get Run Log</button>
+        <textarea id="stateLog" cols="50" rows="10" readonly></textarea>
+    </div>
+
+    <div>
+        <h2>Service Metrics</h2>
+        <button id="getMetricsButton" onclick="getMetrics()">Get Service Metrics</button>
+        <textarea id="metrics" cols="50" rows="10" readonly></textarea>
+    </div>
+
+    
+    
+
+    <script>
+        // Fetch combined data from Service1 and Service2
+        async function sendRequest() {
+            try {
+                let response = await fetch('/api/');
+                if (response.ok) {
+                    let data = await response.json();
+                    document.getElementById('response').value = JSON.stringify(data, null, 2);
+
+                
+                    let upstreamServer = response.headers.get('X-Upstream-Server');
+                    if (upstreamServer) {
+                        console.log('Request handled by upstream server:', upstreamServer);
+                    }
+                } else {
+                    alert('Failed to fetch data. HTTP-Error: ' + response.status);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('Error fetching data. Check console for details.');
+            }
+        }
+
+
+       
+        async function changeState(newState) {
+            try {
+                // PUT request to change the state
+                let response = await fetch('/state', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: newState
+                });
+
+                if (response.ok) {
+                    let data = await response.json();
+                    alert(data.message);
+
+                    if (newState === 'INIT') {
+                        console.log("Logging out...");
+                        window.location.reload();  //reloading the page
+                    } else if (newState === 'SHUTDOWN') {
+                        console.log("Shutting down...");
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000); // Reload after 2 seconds
+                    }
+                } else {
+                    // Handle HTTP errors
+                    let errorData = await response.json();
+                    alert('Failed to change state. Message: ' + (errorData.message || 'Unknown error'));
+                }
+            } catch (error) {
+                // Handle unexpected errors
+                console.error('Error changing state:', error);
+                alert('Unexpected error while changing state. Check console for details.');
+            }
+        }
+
+
+
+
+
+        // Fetch the current state of the system
+        async function getState() {
+            try {
+                let response = await fetch('/state');
+                if (response.ok) {
+                    let state = await response.text();
+                    document.getElementById('stateLog').value = "Current State: " + state;
+                } else {
+                    alert('Failed to fetch state. HTTP-Error: ' + response.status);
+                }
+            } catch (error) {
+                console.error('Error fetching state:', error);
+                alert('Error fetching state. Check console for details.');
+            }
+        }
+
+        // Fetch the run log of the system
+        async function getLog() {
+            try {
+                let response = await fetch('/run-log');
+                if (response.ok) {
+                    let log = await response.text();
+                    document.getElementById('stateLog').value = log;
+                } else {
+                    alert('Failed to fetch run log. HTTP-Error: ' + response.status);
+                }
+            } catch (error) {
+                console.error('Error fetching run log:', error);
+                alert('Error fetching run log. Check console for details.');
+            }
+        }
+
+        // Fetch the service metrics
+        async function getMetrics() {
+            try {
+                
+                const response = await fetch('/metrics', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const metrics = await response.json();
+                document.getElementById('metrics').textContent = JSON.stringify(metrics, null, 2);
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+                alert('Failed to fetch metrics: ' + error.message);
+            }
+        }
+
+
+    
+
+    </script>
+</body>
+</html>
